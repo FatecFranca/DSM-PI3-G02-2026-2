@@ -1,0 +1,46 @@
+{
+  "name": "Spring Boot com Java 25 e MongoDB",
+
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "25",
+      "jdkDistro": "tem",
+      "installMaven": true
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        "mongodb.mongodb-vscode"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "spring.initializr.defaultLanguage": "Java",
+        "spring.initializr.defaultJavaVersion": "25",
+        "spring.initializr.defaultPackaging": "JAR",
+        "spring.initializr.defaultOpenProjectMethod": "Open"
+      }
+    }
+  },
+
+  "forwardPorts": [
+    8888
+  ],
+
+  "portsAttributes": {
+    "8888": {
+      "label": "Spring Boot",
+      "onAutoForward": "openBrowser",
+      "visibility": "private"
+    }
+  },
+
+  "postCreateCommand": "chmod +x mvnw && ./mvnw dependency:go-offline",
+
+  "remoteUser": "vscode"
+}
