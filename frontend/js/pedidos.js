@@ -8,9 +8,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  const usuario = localStorageObterUsuario();
-  document.getElementById('nomeUsuario').textContent = usuario?.nome ? `Olá, ${usuario.nome}` : '';
-  document.getElementById('atendentePedido').textContent = `Atendente: ${usuario?.nome || 'Usuário'}`;
+  document.getElementById('nomeUsuario').textContent = `Olá, ${nomeDoUsuarioLogado()}`;
+  document.getElementById('atendentePedido').textContent = `Atendente: ${nomeDoUsuarioLogado()}`;
   document.getElementById('numeroPedido').textContent = `pedido ${proximoNumeroPedido()}`;
   document.getElementById('valorTaxaEntrega').textContent = formatarMoeda(TAXA_ENTREGA_PADRAO);
 
@@ -21,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   configurarBuscaCliente();
+  restaurarClienteRecemCadastrado();
   await configurarBuscaProduto();
   configurarModalidade();
 
@@ -56,7 +56,14 @@ function configurarBuscaCliente() {
         const clientes = await buscarClientes(termo);
         renderizarResultadosCliente(clientes);
       } catch (erro) {
-        renderizarResultadosCliente(clientesDeExemplo(termo));
+        if (emModoTeste()) {
+          renderizarResultadosCliente(clientesDeExemplo(termo));
+        } else {
+          resultados.innerHTML = `<div style="padding:10px 14px; font-size:0.85rem; color:#C23A2D;">
+            Não foi possível buscar clientes: ${erro.message}
+          </div>`;
+          resultados.style.display = 'block';
+        }
       }
     }, 300);
   });
@@ -64,14 +71,14 @@ function configurarBuscaCliente() {
   function renderizarResultadosCliente(clientes) {
     if (!clientes.length) {
       resultados.innerHTML = `<div style="padding:10px 14px; font-size:0.85rem; color:#4A4A4A;">
-        Nenhum cliente encontrado. <a href="cadastros.html">Cadastrar novo cliente</a>
+        Nenhum cliente encontrado. <a href="cadastros.html?origem=pedidos">Cadastrar novo cliente</a>
       </div>`;
       resultados.style.display = 'block';
       return;
     }
 
     resultados.innerHTML = clientes
-      .map((c) => `<button type="button" data-cliente-id="${c.id}">${c.nome} — ${c.telefone || ''}</button>`)
+      .map((c) => `<button type="button" data-cliente-id="${c.id}">${c.nome} — ${formatarTelefone(c.telefone)}</button>`)
       .join('');
 
     resultados.querySelectorAll('button[data-cliente-id]').forEach((botao, indice) => {
@@ -88,6 +95,16 @@ function configurarBuscaCliente() {
   }
 }
 
+/** Depois de cadastrar um cliente (cadastros.html?origem=pedidos), ele volta já selecionado. */
+function restaurarClienteRecemCadastrado() {
+  const bruto = sessionStorage.getItem('cityPizzas_clienteSelecionado');
+  if (!bruto) return;
+  sessionStorage.removeItem('cityPizzas_clienteSelecionado');
+  clienteSelecionado = JSON.parse(bruto);
+  document.getElementById('nomeCliente').textContent = clienteSelecionado.nome;
+}
+
+/** Só usado no "modo de teste" (sessão sem back-end). */
 function clientesDeExemplo(termo) {
   return [
     { id: 1, nome: 'Cliente 1', telefone: '(16) 99101-1234' },
@@ -105,7 +122,12 @@ async function configurarBuscaProduto() {
   try {
     catalogoProdutos = await listarProdutos();
   } catch (erro) {
-    catalogoProdutos = produtosDeExemplo();
+    if (emModoTeste()) {
+      catalogoProdutos = produtosDeExemplo();
+    } else {
+      catalogoProdutos = [];
+      mostrarErro(`Não foi possível carregar os produtos: ${erro.message}`);
+    }
   }
 
   campo.addEventListener('input', () => {

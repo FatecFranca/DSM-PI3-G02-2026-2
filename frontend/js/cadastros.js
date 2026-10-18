@@ -1,3 +1,11 @@
+/**
+ * cadastros.js — abas de cadastro e formulário de cliente.
+ * Integra com POST /clientes (rota proposta; o ClienteController ainda não existe no back-end).
+ *
+ * Campos conforme o model Cliente.java:
+ *   obrigatórios: nome, telefone, cpf | opcionais: email, endereco (um único TEXTO), dataNascimento
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
   configurarAbas();
   configurarFormularioCliente();
@@ -18,7 +26,6 @@ function configurarAbas() {
     botao.addEventListener('click', () => {
       botoesAba.forEach((b) => b.classList.remove('ativa'));
       botao.classList.add('ativa');
-
       Object.values(conteudos).forEach((el) => (el.style.display = 'none'));
       conteudos[botao.dataset.aba].style.display = 'block';
     });
@@ -36,11 +43,17 @@ function configurarFormularioCliente() {
   const campos = {
     nome: document.getElementById('nome'),
     telefone: document.getElementById('telefone'),
+    cpf: document.getElementById('cpf'),
+    email: document.getElementById('email'),
+    dataNascimento: document.getElementById('dataNascimento'),
     cep: document.getElementById('cep'),
     numero: document.getElementById('numero'),
     bairro: document.getElementById('bairro'),
     rua: document.getElementById('rua'),
   };
+
+  // Veio da tela de pedidos (busca sem resultado)? Então volta pra lá com o cliente selecionado.
+  const veioDoPedido = new URLSearchParams(window.location.search).get('origem') === 'pedidos';
 
   formulario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -52,17 +65,23 @@ function configurarFormularioCliente() {
 
     const dadosCliente = {
       nome: campos.nome.value.trim(),
-      telefone: campos.telefone.value.trim(),
-      endereco: {
-        cep: campos.cep.value.trim(),
-        rua: campos.rua.value.trim(),
-        numero: campos.numero.value.trim(),
-        bairro: campos.bairro.value.trim(),
-      },
+      telefone: somenteDigitos(campos.telefone.value), // guardado só com dígitos (busca por telefone é exata)
+      cpf: somenteDigitos(campos.cpf.value),
+      email: campos.email.value.trim() || undefined,
+      dataNascimento: campos.dataNascimento.value || undefined, // yyyy-MM-dd (LocalDate)
+      endereco: montarEndereco() || undefined,
     };
 
     try {
-      await cadastrarCliente(dadosCliente);
+      // POST /clientes (rota proposta) -> cliente criado
+      const criado = await cadastrarCliente(dadosCliente);
+
+      if (veioDoPedido && criado && criado.id) {
+        sessionStorage.setItem('cityPizzas_clienteSelecionado', JSON.stringify(criado));
+        window.location.href = 'pedidos.html';
+        return;
+      }
+
       mensagemSucesso.textContent = 'Cliente cadastrado com sucesso.';
       mensagemSucesso.style.display = 'block';
       formulario.reset();
@@ -74,6 +93,18 @@ function configurarFormularioCliente() {
     }
   });
 
+  /** O back-end guarda endereço como UM texto: "Rua, nº — Bairro, CEP". */
+  function montarEndereco() {
+    const rua = campos.rua.value.trim();
+    const numero = campos.numero.value.trim();
+    const bairro = campos.bairro.value.trim();
+    const cep = campos.cep.value.trim();
+
+    const ruaENumero = [rua, numero].filter(Boolean).join(', ');
+    const partes = [ruaENumero, bairro].filter(Boolean).join(' — ');
+    return [partes, cep && `CEP ${cep}`].filter(Boolean).join(', ');
+  }
+
   function validarFormulario() {
     let valido = true;
 
@@ -81,8 +112,17 @@ function configurarFormularioCliente() {
       document.getElementById('erroNome').style.display = 'block';
       valido = false;
     }
-    if (!campos.telefone.value.trim()) {
+    const digitosTelefone = somenteDigitos(campos.telefone.value);
+    if (digitosTelefone.length < 10 || digitosTelefone.length > 11) {
       document.getElementById('erroTelefone').style.display = 'block';
+      valido = false;
+    }
+    if (!validarCpf(campos.cpf.value)) {
+      document.getElementById('erroCpf').style.display = 'block';
+      valido = false;
+    }
+    if (campos.email.value.trim() && !campos.email.value.includes('@')) {
+      document.getElementById('erroEmail').style.display = 'block';
       valido = false;
     }
 
