@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedido — City Pizzas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="cabecalho">
+    <a href="pedidos.html" class="cabecalho__marca">City Pizzas</a>
+    <nav class="cabecalho__nav">
+      <a href="historico.html">Pedidos anteriores</a>
+      <span class="cabecalho__usuario" id="nomeUsuario"></span>
+      <a href="#" id="linkSair">Sair</a>
+    </nav>
+  </header>
+
+  <main class="pedido">
+
+    <div class="pedido__topo">
+      <div style="width:70px;"></div>
+      <div class="pedido__identificacao">
+        <div class="pedido__numero" id="numeroPedido">pedido 001</div>
+        <div class="pedido__cliente">
+          <span id="nomeCliente">Cliente não selecionado</span>
+          <button type="button" id="botaoTrocarCliente">buscar/trocar</button>
+        </div>
+      </div>
+      <div class="pedido__acoes-topo">
+        <button type="button" class="botao botao--contorno" id="botaoNovoPedido">Novo</button>
+      </div>
+    </div>
+
+    <div id="mensagemErro" class="mensagem mensagem--erro" role="alert"></div>
+    <div id="mensagemSucesso" class="mensagem mensagem--sucesso" role="status"></div>
+
+    <div id="painelCliente" class="busca-produto" style="max-width:420px; display:none;">
+      <input type="text" id="campoBuscaCliente" placeholder="Buscar cliente por nome ou telefone" autocomplete="off" />
+      <div class="busca-produto__resultados" id="resultadosCliente"></div>
+    </div>
+
+    <div class="busca-produto">
+      <input type="text" id="campoBuscaProduto" placeholder="Produtos" autocomplete="off" />
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="7" stroke="#1A1A1A" stroke-width="1.6"/>
+        <path d="M20 20l-3.5-3.5" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div class="busca-produto__resultados" id="resultadosProduto"></div>
+    </div>
+
+    <section class="itens-pedido" id="itensPedido">
+      <p class="pedido__vazio" id="pedidoVazio">Nenhum item adicionado ainda. Busque um produto acima.</p>
+    </section>
+
+    <section class="modalidade">
+      <div class="modalidade__opcoes">
+        <select id="selectModalidade">
+          <option value="ENTREGA">Entrega</option>
+          <option value="RETIRADA">Retirada</option>
+        </select>
+      </div>
+
+      <div id="camposEntrega" class="modalidade__campos">
+        <div class="campo" style="margin:0;">
+          <label for="endRua">Endereço</label>
+          <input type="text" id="endRua" placeholder="Av São Pedro" />
+        </div>
+        <div class="campo" style="margin:0;">
+          <label for="endNumero">Nº</label>
+          <input type="text" id="endNumero" placeholder="530" />
+        </div>
+        <div class="campo" style="margin:0;">
+          <label for="endBairro">Bairro</label>
+          <input type="text" id="endBairro" placeholder="City Petrópolis" />
+        </div>
+        <div class="modalidade__valor-taxa">
+          <div id="valorTaxaEntrega">R$ 5,00</div>
+        </div>
+      </div>
+
+      <div id="camposRetirada" class="modalidade__campos" style="display:none;">
+        <div class="campo" style="margin:0;">
+          <label for="retiradaNome">Nome</label>
+          <input type="text" id="retiradaNome" placeholder="Cliente 002" />
+        </div>
+        <div class="campo" style="margin:0; grid-column: span 2;">
+          <label for="retiradaTelefone">Avisar</label>
+          <input type="tel" id="retiradaTelefone" placeholder="(16) 99361-3252" />
+        </div>
+      </div>
+    </section>
+
+    <section class="pedido__rodape">
+      <label for="selectPagamento">Forma de pagamento:</label>
+      <select id="selectPagamento">
+        <option value="DINHEIRO">Dinheiro</option>
+        <option value="PIX">Pix</option>
+        <option value="CREDITO">Crédito</option>
+        <option value="DEBITO">Débito</option>
+      </select>
+
+      <div class="pedido__total">
+        <span>Total:</span>
+        <div id="valorTotal">R$ 0,00</div>
+      </div>
+    </section>
+
+    <div class="campo">
+      <label for="observacaoGeral">Observações gerais (opcional)</label>
+      <textarea id="observacaoGeral" rows="2" placeholder="Ex: campainha quebrada, ponto de referência..."></textarea>
+    </div>
+
+    <div class="pedido__base">
+      <span class="pedido__atendente" id="atendentePedido">Atendente: —</span>
+      <div class="pedido__acoes-base">
+        <button type="button" class="botao botao--vermelho" id="botaoCancelar">Cancelar ✕</button>
+        <button type="button" class="botao botao--verde" id="botaoImprimir">Imprimir 🖶</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/pedidos.js"></script>
+</body>
+</html>

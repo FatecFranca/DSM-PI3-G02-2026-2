@@ -1,0 +1,711 @@
+/* ============================================================
+   City Pizzas — estilos compartilhados
+   Fiel à paleta do protótipo: fundo amarelo-claro, bordas
+   pretas grossas, botões sólidos (preto / vermelho / verde).
+   ============================================================ */
+
+:root {
+  --fundo: #F6DE9E;
+  --fundo-campo: #FFFFFF;
+  --preto: #1A1A1A;
+  --cinza-texto: #4A4A4A;
+  --cinza-borda: #C9C9C9;
+  --vermelho: #E14B3C;
+  --vermelho-escuro: #C23A2D;
+  --verde: #3FBE62;
+  --verde-escuro: #33A052;
+  --erro-fundo: #FBE3E1;
+  --sombra: rgba(0, 0, 0, 0.15);
+
+  --fonte: 'Work Sans', 'Segoe UI', Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--fonte);
+  background-color: var(--fundo);
+  color: var(--preto);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--preto);
+}
+
+button {
+  font-family: var(--fonte);
+}
+
+/* ---------- Cabeçalho (telas internas) ---------- */
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+}
+
+.cabecalho__marca {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--preto);
+  text-decoration: none;
+}
+
+.cabecalho__nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.cabecalho__nav a {
+  text-decoration: none;
+  color: var(--preto);
+}
+
+.cabecalho__usuario {
+  color: var(--cinza-texto);
+}
+
+/* ---------- Login ---------- */
+
+.login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px;
+}
+
+.login__marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.login__marca svg {
+  width: 40px;
+  height: 40px;
+}
+
+.login__marca span {
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.login__cartao {
+  width: 100%;
+  max-width: 340px;
+  border: 3px solid var(--preto);
+  border-radius: 16px;
+  padding: 32px 28px;
+  background-color: var(--fundo);
+  text-align: center;
+}
+
+.login__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  margin: 0 auto 22px;
+  background-color: #E9E9E9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.login__avatar svg {
+  width: 100%;
+  height: 100%;
+}
+
+.login__esqueci {
+  display: block;
+  text-align: right;
+  font-size: 0.8rem;
+  margin: -6px 0 16px;
+  color: var(--preto);
+}
+
+.login__rodape {
+  margin-top: 16px;
+  font-size: 0.78rem;
+  color: var(--cinza-texto);
+}
+
+.login__rodape a {
+  font-weight: 600;
+}
+
+/* ---------- Campos de formulário ---------- */
+
+.campo {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.campo label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.campo-com-icone {
+  position: relative;
+}
+
+.campo-com-icone svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+.campo-com-icone input {
+  padding-left: 36px;
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--preto);
+  border-radius: 8px;
+  font-family: var(--fonte);
+  font-size: 0.94rem;
+  background-color: var(--fundo-campo);
+  color: var(--preto);
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  outline: 2px solid var(--preto);
+  outline-offset: 1px;
+}
+
+.campo__erro {
+  color: var(--vermelho-escuro);
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: none;
+}
+
+.campo__linha-dupla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.campo__linha-tripla {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.4fr;
+  gap: 14px;
+}
+
+/* ---------- Botões ---------- */
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.botao--preto {
+  background-color: var(--preto);
+  color: #FFF;
+  border-radius: 8px;
+}
+
+.botao--preto:hover {
+  background-color: #333;
+}
+
+.botao--vermelho {
+  background-color: var(--vermelho);
+  color: #FFF;
+}
+
+.botao--vermelho:hover {
+  background-color: var(--vermelho-escuro);
+}
+
+.botao--verde {
+  background-color: var(--verde);
+  color: #FFF;
+}
+
+.botao--verde:hover {
+  background-color: var(--verde-escuro);
+}
+
+.botao--contorno {
+  background-color: transparent;
+  border: 1px solid var(--preto);
+  color: var(--preto);
+  border-radius: 8px;
+}
+
+.botao--largura-total {
+  width: 100%;
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Mensagens de estado ---------- */
+
+.mensagem {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.mensagem--erro {
+  background-color: var(--erro-fundo);
+  color: var(--vermelho-escuro);
+  border: 1px solid var(--vermelho);
+}
+
+.mensagem--sucesso {
+  background-color: #E4F6E9;
+  color: var(--verde-escuro);
+  border: 1px solid var(--verde);
+}
+
+.mensagem--info {
+  background-color: rgba(255,255,255,0.5);
+  color: var(--cinza-texto);
+  border: 1px solid var(--cinza-borda);
+}
+
+/* ---------- Tela de pedido (estilo PDV) ---------- */
+
+.pedido {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+
+.pedido__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.pedido__identificacao {
+  text-align: center;
+  flex: 1;
+}
+
+.pedido__numero {
+  font-weight: 600;
+}
+
+.pedido__cliente {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.pedido__cliente button {
+  background: none;
+  border: none;
+  text-decoration: underline;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--cinza-texto);
+}
+
+.pedido__acoes-topo {
+  display: flex;
+  gap: 8px;
+}
+
+.busca-produto {
+  position: relative;
+  margin: 20px 0 24px;
+  max-width: 340px;
+}
+
+.busca-produto input {
+  width: 100%;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid var(--preto);
+  border-radius: 8px;
+  background-color: var(--fundo-campo);
+  font-family: var(--fonte);
+}
+
+.busca-produto svg {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+}
+
+.busca-produto__resultados {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #FFF;
+  border: 1px solid var(--preto);
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+}
+
+.busca-produto__resultados button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--fonte);
+  font-size: 0.9rem;
+  border-bottom: 1px solid #EEE;
+}
+
+.busca-produto__resultados button:hover {
+  background-color: var(--fundo);
+}
+
+.itens-pedido {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-bottom: 28px;
+}
+
+.item-pedido {
+  display: grid;
+  grid-template-columns: 64px 1fr auto auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.item-pedido__imagem {
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--preto);
+  border-radius: 4px;
+  background: repeating-linear-gradient(45deg, transparent, transparent 27px, var(--preto) 27px, var(--preto) 28px),
+              repeating-linear-gradient(-45deg, transparent, transparent 27px, var(--preto) 27px, var(--preto) 28px);
+  background-color: #FFF;
+}
+
+.item-pedido__info h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.item-pedido__obs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+}
+
+.item-pedido__obs select,
+.item-pedido__obs input {
+  padding: 5px 8px;
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  font-family: var(--fonte);
+  font-size: 0.82rem;
+  background-color: var(--fundo-campo);
+}
+
+.item-pedido__acrescimo-tag {
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.item-pedido__preparo {
+  text-align: right;
+  font-size: 0.85rem;
+}
+
+.item-pedido__preparo select {
+  padding: 6px 8px;
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  font-family: var(--fonte);
+  background-color: var(--fundo-campo);
+  margin-bottom: 4px;
+}
+
+.item-pedido__preparo-alt {
+  color: var(--cinza-texto);
+  font-size: 0.78rem;
+}
+
+.item-pedido__precos {
+  text-align: right;
+  font-size: 0.9rem;
+  min-width: 80px;
+}
+
+.item-pedido__precos div {
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  padding: 6px 10px;
+  background-color: var(--fundo-campo);
+  margin-bottom: 6px;
+}
+
+.item-pedido__remover {
+  background: none;
+  border: none;
+  color: var(--vermelho-escuro);
+  cursor: pointer;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.pedido__vazio {
+  text-align: center;
+  color: var(--cinza-texto);
+  padding: 30px 0;
+  font-size: 0.9rem;
+}
+
+/* ---------- Modalidade (Entrega / Retirada) ---------- */
+
+.modalidade {
+  margin-bottom: 20px;
+}
+
+.modalidade__opcoes {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.modalidade__opcoes select {
+  padding: 8px 10px;
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  background-color: var(--fundo-campo);
+  font-family: var(--fonte);
+}
+
+.modalidade__alternativa {
+  font-size: 0.82rem;
+  color: var(--cinza-texto);
+  margin: -8px 0 12px;
+}
+
+.modalidade__campos {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.6fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.modalidade__campos input {
+  padding: 9px 12px;
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  font-family: var(--fonte);
+  background-color: var(--fundo-campo);
+  width: 100%;
+}
+
+.modalidade__valor-taxa {
+  text-align: center;
+}
+
+.modalidade__valor-taxa div {
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  padding: 9px 12px;
+  background-color: var(--fundo-campo);
+}
+
+/* ---------- Rodapé do pedido: pagamento / total / atendente ---------- */
+
+.pedido__rodape {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.pedido__rodape label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pedido__rodape select {
+  padding: 8px 10px;
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  background-color: var(--fundo-campo);
+  font-family: var(--fonte);
+}
+
+.pedido__total {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pedido__total div {
+  border: 1px solid var(--preto);
+  border-radius: 6px;
+  padding: 8px 14px;
+  background-color: var(--fundo-campo);
+  font-weight: 700;
+}
+
+.pedido__base {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--preto);
+}
+
+.pedido__atendente {
+  font-size: 0.85rem;
+  color: var(--cinza-texto);
+}
+
+.pedido__acoes-base {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---------- Cadastros ---------- */
+
+.cadastro {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+}
+
+.cadastro__titulo {
+  font-size: 1.6rem;
+  margin: 0 0 4px;
+}
+
+.cadastro__subtitulo {
+  color: var(--cinza-texto);
+  margin: 0 0 24px;
+  font-size: 0.92rem;
+}
+
+.cadastro__abas {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 22px;
+  border-bottom: 2px solid var(--preto);
+}
+
+.cadastro__aba {
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  font-family: var(--fonte);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--cinza-texto);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.cadastro__aba.ativa {
+  color: var(--preto);
+  border-bottom-color: var(--preto);
+}
+
+.cadastro__aba:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cadastro__cartao {
+  border: 3px solid var(--preto);
+  border-radius: 16px;
+  padding: 28px;
+  background-color: rgba(255,255,255,0.4);
+}
+
+.cadastro__bloqueado {
+  text-align: center;
+  padding: 30px 10px;
+  color: var(--cinza-texto);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .item-pedido {
+    grid-template-columns: 48px 1fr;
+  }
+
+  .item-pedido__preparo,
+  .item-pedido__precos {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .modalidade__campos {
+    grid-template-columns: 1fr;
+  }
+
+  .campo__linha-dupla,
+  .campo__linha-tripla {
+    grid-template-columns: 1fr;
+  }
+
+  .pedido__base {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

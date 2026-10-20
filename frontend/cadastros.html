@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastros — City Pizzas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="cabecalho">
+    <a href="pedidos.html" class="cabecalho__marca">City Pizzas</a>
+    <nav class="cabecalho__nav">
+      <a href="pedidos.html">Voltar ao pedido</a>
+    </nav>
+  </header>
+
+  <main class="cadastro">
+    <h1 class="cadastro__titulo">Cadastros</h1>
+    <p class="cadastro__subtitulo">Cadastre um cliente para associar a um pedido. Colaboradores e produtos têm acesso restrito.</p>
+
+    <div class="cadastro__abas">
+      <button type="button" class="cadastro__aba ativa" data-aba="cliente">Cliente</button>
+      <button type="button" class="cadastro__aba" data-aba="colaborador">Colaborador</button>
+      <button type="button" class="cadastro__aba" data-aba="produto">Produto</button>
+    </div>
+
+    <div class="cadastro__cartao">
+
+      <!-- Aba Cliente -->
+      <div id="abaCliente" class="aba-conteudo">
+        <div id="mensagemErro" class="mensagem mensagem--erro" role="alert"></div>
+        <div id="mensagemSucesso" class="mensagem mensagem--sucesso" role="status"></div>
+
+        <form id="formCliente" novalidate>
+          <div class="campo">
+            <label for="nome">Nome completo</label>
+            <input type="text" id="nome" name="nome" autocomplete="name" required />
+            <span class="campo__erro" id="erroNome">Informe o nome do cliente.</span>
+          </div>
+
+          <div class="campo__linha-dupla">
+            <div class="campo">
+              <label for="telefone">Telefone</label>
+              <input type="tel" id="telefone" name="telefone" placeholder="(16) 99361-3252" autocomplete="tel" required />
+              <span class="campo__erro" id="erroTelefone">Informe um telefone com DDD.</span>
+            </div>
+            <div class="campo">
+              <label for="cpf">CPF</label>
+              <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off" required />
+              <span class="campo__erro" id="erroCpf">Informe um CPF válido.</span>
+            </div>
+          </div>
+
+          <div class="campo__linha-dupla">
+            <div class="campo">
+              <label for="email">E-mail (opcional)</label>
+              <input type="email" id="email" name="email" autocomplete="email" />
+              <span class="campo__erro" id="erroEmail">E-mail inválido.</span>
+            </div>
+            <div class="campo">
+              <label for="dataNascimento">Data de nascimento (opcional)</label>
+              <input type="date" id="dataNascimento" name="dataNascimento" />
+            </div>
+          </div>
+
+          <div class="campo__linha-tripla">
+            <div class="campo">
+              <label for="cep">CEP</label>
+              <input type="text" id="cep" name="cep" placeholder="00000-000" autocomplete="postal-code" />
+            </div>
+            <div class="campo">
+              <label for="numero">Número</label>
+              <input type="text" id="numero" name="numero" autocomplete="off" />
+            </div>
+            <div class="campo">
+              <label for="bairro">Bairro</label>
+              <input type="text" id="bairro" name="bairro" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="rua">Rua</label>
+            <input type="text" id="rua" name="rua" autocomplete="address-line1" />
+          </div>
+
+          <button type="submit" class="botao botao--preto botao--largura-total" id="botaoCadastrar">
+            Cadastrar cliente
+          </button>
+        </form>
+      </div>
+
+      <div id="abaColaborador" class="aba-conteudo" style="display:none;">
+        <div class="cadastro__bloqueado" id="bloqueioColaborador">
+          Cadastro de colaborador é restrito ao administrador.
+        </div>
+      </div>
+
+      <div id="abaProduto" class="aba-conteudo" style="display:none;">
+        <div class="cadastro__bloqueado" id="bloqueioProduto">
+          Cadastro de produto disponível apenas para funcionários autorizados.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/cadastros.js"></script>
+</body>
+</html>

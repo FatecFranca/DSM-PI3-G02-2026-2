@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Erro</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: normal;
+        }
+
+        p {
+            font-size: 16px;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Esta aplicação não possui um mapeamento específico para /error.</h1>
+
+    <p>Você está vendo esta página como uma alternativa de erro.</p>
+
+    <p th:text="${timestamp}"></p>
+
+    <p>
+        Ocorreu um erro inesperado
+        (tipo=<span th:text="${error}">Not Found</span>,
+        status=<span th:text="${status}">404</span>).
+    </p>
+
+</body>
+</html>

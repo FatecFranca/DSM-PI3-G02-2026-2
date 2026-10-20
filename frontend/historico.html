@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedidos anteriores — City Pizzas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="cabecalho">
+    <a href="pedidos.html" class="cabecalho__marca">City Pizzas</a>
+    <nav class="cabecalho__nav">
+      <a href="pedidos.html">Novo pedido</a>
+    </nav>
+  </header>
+
+  <main class="pedido">
+    <h1 style="margin-bottom:4px;">Pedidos anteriores</h1>
+    <p style="color:#4A4A4A; font-size:0.9rem; margin-top:0;">
+      Guardado só neste navegador, temporariamente — quando o back-end tiver um endpoint de listagem de pedidos, isso passa a vir de lá.
+    </p>
+
+    <div id="listaVazia" class="pedido__vazio" style="display:none;">
+      Nenhum pedido registrado neste navegador ainda.
+    </div>
+
+    <div id="listaPedidos" style="display:flex; flex-direction:column; gap:16px;"></div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/historico.js"></script>
+</body>
+</html>
