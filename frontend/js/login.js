@@ -5,7 +5,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   if (usuarioEstaLogado()) {
-    window.location.href = 'pedidos.html';
+    window.location.href = 'cadastros.html';
     return;
   }
 
@@ -42,16 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
     alternarCarregando(botaoEntrar, true, 'Entrando...', 'Entrar');
 
     try {
-      // POST /auth/login -> { matricula, perfil }
+      // POST /auth/login -> { matricula, nome, perfil, token }
       const resultado = await login(matricula, senha);
 
       if (!resultado || !resultado.perfil) {
-        // O LoginResponse do back-end precisa de getters sem parâmetro para o JSON sair completo.
-        throw new Error('Resposta de login incompleta. Avise o back-end (LoginResponse sem getters).');
+        throw new Error('O servidor retornou uma resposta de login incompleta.');
       }
 
       localStorageSalvarSessao(resultado);
-      window.location.href = 'pedidos.html';
+      window.location.href = 'cadastros.html';
     } catch (erro) {
       mostrarErro(erro.message || 'Matrícula ou senha incorreta.');
     } finally {
@@ -101,9 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!codigoJaSolicitado) {
         // Etapa 1 — POST /auth/recuperar-senha { email }
-        // Hoje o back-end devolve o próprio código no texto da resposta (não envia e-mail).
-        const resposta = await solicitarRecuperacaoSenha(email);
-        mostrarInfo(typeof resposta === 'string' ? resposta : 'Código gerado.');
+        await solicitarRecuperacaoSenha(email);
+        mostrarInfo('Se o e-mail estiver cadastrado, você receberá um código.');
         etapaCodigo.style.display = 'block';
         botaoRecuperar.textContent = 'Redefinir senha';
         codigoJaSolicitado = true;
@@ -112,8 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Etapa 2 — POST /auth/redefinir-senha { email, codigo, novaSenha }
         const codigo = campoCodigo.value.trim();
         const novaSenha = campoNovaSenha.value;
-        if (!codigo || novaSenha.length < 6) {
-          mostrarErro('Informe o código e uma nova senha com pelo menos 6 caracteres.');
+        if (!/^\d{6}$/.test(codigo) || novaSenha.length < 8) {
+          mostrarErro('Informe o código e uma nova senha com pelo menos 8 caracteres.');
           return;
         }
         await redefinirSenha(email, codigo, novaSenha);
@@ -125,19 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       botaoRecuperar.disabled = false;
     }
-  });
-
-  /* ---------- Modo de teste (TEMPORÁRIO) ---------- */
-
-  document.getElementById('linkModoTeste').addEventListener('click', (evento) => {
-    evento.preventDefault();
-    localStorageSalvarSessao({
-      matricula: 'teste',
-      nome: 'Atendente Teste',
-      perfil: 'funcionario',
-      modoTeste: true,
-    });
-    window.location.href = 'pedidos.html';
   });
 
   /* ---------- Utilidades ---------- */

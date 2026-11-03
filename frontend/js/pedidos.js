@@ -13,8 +13,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('numeroPedido').textContent = `pedido ${proximoNumeroPedido()}`;
   document.getElementById('valorTaxaEntrega').textContent = formatarMoeda(TAXA_ENTREGA_PADRAO);
 
-  document.getElementById('linkSair').addEventListener('click', (evento) => {
+  document.getElementById('linkSair').addEventListener('click', async (evento) => {
     evento.preventDefault();
+    try { await encerrarSessaoNoServidor(); } catch (_) { /* rede indisponível */ }
     localStorageEncerrarSessao();
     window.location.href = 'index.html';
   });
@@ -77,13 +78,14 @@ function configurarBuscaCliente() {
       return;
     }
 
-    resultados.innerHTML = clientes
-      .map((c) => `<button type="button" data-cliente-id="${c.id}">${c.nome} — ${formatarTelefone(c.telefone)}</button>`)
-      .join('');
-
-    resultados.querySelectorAll('button[data-cliente-id]').forEach((botao, indice) => {
+    resultados.replaceChildren();
+    clientes.forEach((cliente) => {
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.textContent = `${cliente.nome} — ${formatarTelefone(cliente.telefone)}`;
+      resultados.appendChild(botao);
       botao.addEventListener('click', () => {
-        clienteSelecionado = clientes[indice];
+        clienteSelecionado = cliente;
         document.getElementById('nomeCliente').textContent = clienteSelecionado.nome;
         resultados.style.display = 'none';
         painel.style.display = 'none';

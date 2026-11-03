@@ -1,4 +1,3 @@
-
 package PI.Pizzaria.controller;
 
 import java.util.List;
@@ -13,7 +12,6 @@ import PI.Pizzaria.service.ClienteService;
 @RestController
 @RequestMapping("/clientes")
 public class ClienteController {
-
     private final ClienteService clienteService;
 
     public ClienteController(ClienteService clienteService) {
@@ -21,29 +19,27 @@ public class ClienteController {
     }
 
     @PostMapping
-    public ResponseEntity<Cliente> cadastrar(
-            @RequestBody Cliente cliente) {
-
-        Cliente novoCliente = clienteService.cadastrar(cliente);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(novoCliente);
+    public ResponseEntity<Cliente> cadastrar(@RequestBody Cliente cliente) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.cadastrar(cliente));
     }
 
-    
-    @GetMapping("/{termo}")
-    public ResponseEntity<List<Cliente>> buscar(
-        @PathVariable String termo) {
-
-        return ResponseEntity.ok(
-            clienteService.buscar(termo));
+    @GetMapping("/busca")
+    public ResponseEntity<List<Cliente>> buscar(@RequestParam(defaultValue = "") String termo) {
+        return ResponseEntity.ok(clienteService.buscar(termo));
     }
 
     @GetMapping
     public ResponseEntity<List<Cliente>> listarTodos() {
-        return ResponseEntity.ok(
-            clienteService.listarTodos());
+        return ResponseEntity.ok(clienteService.listarTodos());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Cliente> buscarPorId(@PathVariable String id) {
+        return ResponseEntity.ok(clienteService.buscarPorId(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Cliente> atualizar(@PathVariable String id, @RequestBody Cliente cliente) {
+        return ResponseEntity.ok(clienteService.atualizar(id, cliente));
+    }
 }
