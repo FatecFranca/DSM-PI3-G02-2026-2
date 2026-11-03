@@ -11,5 +11,6 @@ public interface ColaboradorRepository extends MongoRepository<Colaborador, Stri
 
     boolean existsByMatricula(String matricula);
     boolean existsByEmail(String email);
+    long countByPerfil(Colaborador.Perfil perfil);
 
 }

@@ -1,17 +1,17 @@
 /**
  * api.js — ponto único de integração com a API REST (Spring Boot).
  *
- * Contrato REAL (conferido no código do back-end):
+ * Contrato Sprint 2: sessão no back-end e autorização por token.
  *   POST /auth/login             { matricula, senha }  -> { matricula, perfil }   (401 + texto se errar)
  *   POST /auth/recuperar-senha   { email }             -> texto com o código
  *   POST /auth/redefinir-senha   { email, codigo, novaSenha } -> texto
  *   GET  /pizzas                 -> [{ id, nome, sabor, tamanho, preco }]
  *   POST /colaboradores          { nome, matricula, email, senha, perfil }
  *
- * Contrato PROPOSTO (back-end ainda não tem ClienteController):
- *   POST /clientes                        { nome, telefone, cpf, email?, endereco?, dataNascimento? }
- *   GET  /clientes/busca?nome=...         -> [{ id, nome, telefone, ... }]
- *   GET  /clientes/busca?telefone=...     -> [{ id, nome, telefone, ... }]
+ *   GET  /clientes/busca?termo=... -> [{ id, nome, telefone, endereco, ... }]
+ *   POST /clientes                    -> cliente cadastrado
+ *   GET  /colaboradores               -> lista (somente administrador)
+ *   POST /auth/admin/redefinir-senha  -> redefinição pelo administrador
  */
 
 const API_BASE_URL = 'http://localhost:8080';
@@ -27,7 +27,7 @@ async function requisitar(caminho, opcoes = {}) {
     ...(opcoes.headers || {}),
   };
 
-  // Quando o back-end passar a emitir token (JWT), ele já segue no header.
+  // Token opaco gerado pelo back-end; não é um JWT.
   const token = localStorageObterToken();
   if (token) {
     cabecalhos['Authorization'] = `Bearer ${token}`;
@@ -106,25 +106,12 @@ function redefinirSenha(email, codigo, novaSenha) {
 
 /* ---------- Clientes ---------- */
 
-/**
- * Busca por nome OU telefone (Documento 01). Se o termo for só números
- * (e tiver pelo menos 8 dígitos), busca por telefone; senão, por nome.
- * Telefones são guardados/buscados SOMENTE COM DÍGITOS (busca é exata no back-end).
- * ROTA PROPOSTA — confirmar com o Ronie.
- */
+/** GET /clientes/busca?termo=... — pesquisa parcial de nome ou telefone. */
 function buscarClientes(termo) {
-  const digitos = somenteDigitos(termo);
-  const ehTelefone = digitos.length >= 8 && digitos.length === termo.replace(/[\s()+-]/g, '').length;
-  const consulta = ehTelefone
-    ? `telefone=${encodeURIComponent(digitos)}`
-    : `nome=${encodeURIComponent(termo.trim())}`;
-  return requisitar(`/clientes/busca?${consulta}`, { method: 'GET' });
+  return requisitar(`/clientes/busca?termo=${encodeURIComponent(termo.trim())}`, { method: 'GET' });
 }
 
-/**
- * POST /clientes — campos conforme model Cliente.java:
- *   obrigatórios: nome, telefone, cpf | opcionais: email, endereco (TEXTO único), dataNascimento (yyyy-MM-dd)
- */
+/** POST /clientes — endereço é um objeto (rua, número, bairro, cidade, CEP). */
 function cadastrarCliente(dadosCliente) {
   return requisitar('/clientes', {
     method: 'POST',
@@ -140,6 +127,21 @@ function cadastrarColaborador(dadosColaborador) {
     method: 'POST',
     body: JSON.stringify(dadosColaborador),
   });
+}
+
+function listarColaboradores() {
+  return requisitar('/colaboradores', { method: 'GET' });
+}
+
+function redefinirSenhaPeloAdministrador(colaboradorId, novaSenha) {
+  return requisitar('/auth/admin/redefinir-senha', {
+    method: 'POST',
+    body: JSON.stringify({ colaboradorId, novaSenha }),
+  });
+}
+
+function encerrarSessaoNoServidor() {
+  return requisitar('/auth/logout', { method: 'POST' });
 }
 
 /* ---------- Produtos ---------- */
@@ -177,16 +179,14 @@ function cancelarPedido(pedidoId) {
 
 /* ---------- Sessão local ---------- */
 /*
- * O back-end ainda NÃO emite token: o login devolve só { matricula, perfil }.
- * Por isso "logado" = existe usuário salvo. Se virar JWT, o token também é guardado.
+ * A sessão só é considerada válida no front-end com token; o back-end confirma
+ * o token e as permissões a cada requisição protegida.
  */
 
-function localStorageSalvarSessao({ matricula, perfil, nome, token, modoTeste }) {
-  if (token) localStorage.setItem('cityPizzas_token', token);
-  localStorage.setItem(
-    'cityPizzas_usuario',
-    JSON.stringify({ matricula, perfil, nome, modoTeste: Boolean(modoTeste) })
-  );
+function localStorageSalvarSessao({ matricula, perfil, nome, token }) {
+  if (!token || !matricula || !perfil) throw new Error('Sessão inválida recebida do servidor.');
+  localStorage.setItem('cityPizzas_token', token);
+  localStorage.setItem('cityPizzas_usuario', JSON.stringify({ matricula, perfil, nome }));
 }
 
 function localStorageObterToken() {
@@ -204,17 +204,15 @@ function localStorageEncerrarSessao() {
 }
 
 function usuarioEstaLogado() {
-  return Boolean(localStorageObterUsuario());
+  return Boolean(localStorageObterUsuario() && localStorageObterToken());
 }
 
 function usuarioEhAdministrador() {
   return localStorageObterUsuario()?.perfil === 'administrador';
 }
 
-/** Sessão criada pelo link "modo de teste" — só nela é permitido usar dados de exemplo. */
-function emModoTeste() {
-  return Boolean(localStorageObterUsuario()?.modoTeste);
-}
+/** Mantido para compatibilidade com o protótipo de pedidos, mas sem acesso de teste. */
+function emModoTeste() { return false; }
 
 /** Nome para exibir (o login ainda não devolve nome, então cai para a matrícula). */
 function nomeDoUsuarioLogado() {
