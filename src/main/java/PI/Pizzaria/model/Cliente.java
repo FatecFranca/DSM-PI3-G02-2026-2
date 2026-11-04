@@ -21,7 +21,7 @@ public class Cliente {
 
     private Endereco endereco;
     private String email;
-    @Indexed(unique = true, sparse = true)
+    @Indexed(unique = true)
     private String cpf;
     private LocalDate dataNascimento;
 
