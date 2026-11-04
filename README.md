@@ -1,83 +1,152 @@
-# City Pizzas — Projeto Interdisciplinar (até a Sprint 2)
+# City Pizzas — Sprint 2 + início da Sprint 3 (tarefas do João Pedro)
 
-Java 21 + Spring Boot + MongoDB (NoSQL) e front-end HTML/CSS/JavaScript.
-Este pacote contém o código da Sprint 2 (PB01–PB06). Telas de pedidos, produtos
- e histórico estavam no ZIP original como protótipo e **não estão concluídas nem
-validadas** — esses módulos são da Sprint 3 em diante.
+Projeto Java 21 + Spring Boot 4.1.1 + MongoDB + HTML/CSS/JavaScript. Esta entrega
+parte do ZIP mais recente enviado pela equipe; não substitui as demais tarefas da Sprint 3.
 
-## Requisitos
-- Java 21 e Maven 3.9+ (ou executar `mvnw.cmd` no Windows). O Dev Container foi alinhado para Java 21 e porta 8080.
-- MongoDB local ou Atlas, com `MONGODB_URI` configurada.
-- Para a recuperação por e-mail, um SMTP real configurado (veja abaixo).
+## O que entrou nesta atualização
 
-## Inicialização
-1. No primeiro uso, configure as variáveis de ambiente abaixo.
-2. Execute o backend a partir da raiz: `./mvnw spring-boot:run` (Linux/macOS) ou
-   `.\mvnw.cmd spring-boot:run` (PowerShell).
-3. Sirva a pasta `frontend` em uma origem HTTP local, por exemplo
-   `python -m http.server 5500 --directory frontend`, a partir da raiz do projeto.
-4. Abra `http://localhost:5500/index.html`. A API usa `http://localhost:8080`.
-   Não abra as telas via `file://`, pois o CORS permite origens HTTP locais.
+- **PB02**: recuperação por e-mail com envio SMTP (`/auth/recuperar-senha`).
+  O código continua sendo gerado com seis dígitos, salvo em hash BCrypt,
+  válido por 15 minutos e com até cinco tentativas. Ele nunca é devolvido pela API.
+  O serviço passa a informar quando o SMTP não foi configurado.
+- **Sprint 3 — João Pedro / PB10 (RF13)**: criação de pedido vinculada a um
+  cliente existente e ao colaborador identificado pelo token de sessão.
+- **Sprint 3 — João Pedro / PB12–PB14 (RF15–RF17)**: pizza inteira ou meio a
+  meio (dois sabores distintos), preparo assada por padrão ou pré-assada e
+  preço-base único independente da escolha dos sabores.
+- Os pedidos são gravados na coleção MongoDB `pedidos`, inicialmente
+  `EM_ABERTO`. O campo `subtotalPizzas` **não** é o total final com entrega e
+  pagamento, que serão implementados na Sprint 4.
+- A tela protótipo de pedidos continua em desenvolvimento. Por segurança,
+  a impressão é cancelada se a API rejeitar o salvamento; não considerar essa
+  tela como a interface final da Sprint 3.
 
-## Variáveis de ambiente
+## Executar no Windows (PowerShell)
 
-| Variável | Finalidade |
-| --- | --- |
-| `MONGODB_URI` | Ex.: `mongodb://localhost:27017/pizzaria` (sem senha no código). |
-| `BOOTSTRAP_ADMIN_NOME` | Nome do primeiro administrador. |
-| `BOOTSTRAP_ADMIN_MATRICULA` | Matrícula do primeiro administrador. |
-| `BOOTSTRAP_ADMIN_EMAIL` | E-mail do primeiro administrador. |
-| `BOOTSTRAP_ADMIN_SENHA` | Senha forte, pelo menos 8 caracteres. |
-| `SMTP_HOST` | Host SMTP, necessário à recuperação por e-mail. |
-| `SMTP_PORT` | Porta SMTP (padrão: 587). |
-| `SMTP_USERNAME` | Login SMTP. |
-| `SMTP_PASSWORD` | Senha específica do SMTP. |
-| `SMTP_FROM` | Endereço do remetente. |
-| `CORS_ALLOWED_ORIGIN_PATTERNS` | Origens permitidas, separadas por vírgula. |
+No diretório com `pom.xml`:
 
-**Primeiro administrador:** o bootstrap é intencionalmente restrito a um banco
-sem nenhum colaborador. Não existe conta/senha padrão embutida. Se o banco já
-contiver colaboradores e nenhum administrador, ajuste o banco com controle de
-acesso ou restaure o banco de testes; não abra cadastro público para contornar
-o problema. Remova as variáveis de bootstrap após a inicialização.
+```powershell
+$env:MONGODB_URI = "SUA_URI_MONGODB_ATLAS_OU_LOCAL"
+# Configure o preço-base aprovado pela pizzaria (valor abaixo apenas ilustrativo):
+$env:PIZZA_PRECO_BASE = "59.00"
+.\mvnw.cmd spring-boot:run
+```
 
-**Segurança:** a API retorna um token aleatório de sessão após o login.
-Endpoints de clientes exigem token válido; endpoints de colaboradores e redefinição
-administrativa exigem perfil de administrador, verificado no back-end. As sessões
-ficam em memória e expiram após oito horas; reiniciar a API exige novo login.
-Senhas e códigos de recuperação são armazenados via BCrypt. O código de
-recuperação expira em 15 minutos, permite até cinco tentativas e **nunca é
-exibido na resposta da API**. Sem SMTP configurado, a recuperação não fica
-operacional: o servidor avisa que o serviço está indisponível.
+A API atende em `http://localhost:8080`. Abra `frontend/index.html` com Live Server
+(`http://127.0.0.1:5500/...`) e faça login. **Mantenha o terminal da API aberto.**
 
-## Endpoints da Sprint 2
+Se o `MONGODB_URI` não for definido, a aplicação tentará `mongodb://localhost:27017/pizzaria`.
+O preço-base **não** possui valor padrão porque o cliente ainda não definiu seu
+valor nos documentos de requisitos. Sem `PIZZA_PRECO_BASE`, a criação de pizza
+retorna `503` com mensagem de configuração pendente. Não utilize valores
+ilustrativos em produção sem validar com a pizzaria.
 
-| Método | Endpoint | Perfil |
-| --- | --- | --- |
-| `POST` | `/auth/login` | Público |
-| `POST` | `/auth/recuperar-senha` | Público (envia e-mail se configurado) |
-| `POST` | `/auth/redefinir-senha` | Público (exige código válido) |
-| `POST` | `/auth/logout` | Usuário autenticado |
-| `POST` | `/auth/admin/redefinir-senha` | Administrador |
-| `GET` | `/clientes/busca?termo=...` | Usuário autenticado |
-| `GET` | `/clientes` | Usuário autenticado |
-| `GET` | `/clientes/{id}` | Usuário autenticado |
-| `POST` | `/clientes` | Usuário autenticado |
-| `PUT` | `/clientes/{id}` | Usuário autenticado |
-| `GET/POST/PUT/DELETE` | `/colaboradores...` | Administrador |
+## PB02 — configurar e receber recuperação de senha por e-mail
 
-Enviar `Authorization: Bearer SEU_TOKEN` nas rotas protegidas.
-No login a API responde `{ "matricula", "nome", "perfil", "token" }`.
+**O envio não funciona sem uma conta/servidor SMTP real.** Configure as variáveis
+na mesma janela de terminal antes de executar o Spring Boot. Exemplo usando
+SMTP do Gmail (se sua conta permitir senha de aplicativo):
+
+```powershell
+$env:SMTP_HOST = "smtp.gmail.com"
+$env:SMTP_PORT = "587"
+$env:SMTP_USERNAME = "conta.remetente@gmail.com"
+$env:SMTP_PASSWORD = "SENHA_DE_APLICATIVO_DO_EMAIL"
+$env:SMTP_FROM = "conta.remetente@gmail.com"
+$env:SMTP_AUTH = "true"
+$env:SMTP_STARTTLS = "true"
+$env:SMTP_SSL = "false"
+.\mvnw.cmd spring-boot:run
+```
+
+**Não use a senha normal da conta quando o provedor exigir uma senha de
+aplicativo.** Não grave senhas no `application.properties`, `.env` versionado,
+prints, relatório ou Git. As variáveis `$env:` acima valem somente para a
+sessão do PowerShell; substitua os exemplos apenas no seu computador.
+
+Teste em `index.html`:
+1. Clique em **Esqueci a senha**.
+2. Digite o **e-mail que já está cadastrado na coleção `colaboradores`**.
+3. Clique em **Enviar código**, verifique a caixa de entrada e a pasta de spam.
+4. Digite os seis dígitos recebidos e uma nova senha com pelo menos oito caracteres.
+5. Entre novamente com a matrícula e a nova senha.
+
+O endpoint `POST /auth/recuperar-senha` recebe `{ "email": "funcionario@exemplo.com" }`.
+A resposta é genérica para não indicar se uma conta existe. Se não houver SMTP
+configurado, a API retorna `503`; se houver erro de autenticação/entrega,
+verifique as credenciais e o servidor SMTP. Um teste automatizado com simulação
+de SMTP **não garante** entrega real ao Gmail/Outlook.
+
+## Sprint 3 — criar pedido (Postman)
+
+Este é um **endpoint para testar o back-end**, não a tela pronta do Cauã.
+
+1. Faça `POST http://localhost:8080/auth/login` com:
+
+   ```json
+   {"matricula":"MATRICULA_EXISTENTE", "senha":"SENHA_EXISTENTE"}
+   ```
+
+2. Copie o campo `token` da resposta. Nas requisições abaixo, inclua
+   `Authorization: Bearer TOKEN_RECEBIDO` e `Content-Type: application/json`.
+3. Use `GET /clientes` para obter um `clienteId` real e `GET /pizzas` para
+   escolher IDs de pizzas já cadastradas. Esta entrega **não cria pizzas**:
+   cadastro de produtos e catálogo são tarefas do Ronie na Sprint 3.
+4. Crie um pedido em `POST http://localhost:8080/pedidos` com o exemplo abaixo:
+
+   ```json
+   {
+     "clienteId": "ID_REAL_DO_CLIENTE",
+     "itens": [
+       {
+         "produtoId": "ID_REAL_DA_PIZZA_CALABRESA",
+         "meioAMeio": false,
+         "quantidade": 1
+       },
+       {
+         "produtoId": "ID_REAL_DA_PIZZA_MUSSARELA",
+         "segundoProdutoId": "ID_REAL_DA_PIZZA_PORTUGUESA",
+         "meioAMeio": true,
+         "tipoPreparo": "PRE_ASSADA",
+         "quantidade": 2
+       }
+     ]
+   }
+   ```
+
+   O primeiro item recebe preparo `ASSADA` automaticamente. Para `meioAMeio:true`,
+   `segundoProdutoId` é obrigatório e deve ser um sabor diferente. O valor da
+   pizza é buscado da **configuração única do servidor**, nunca do preço do
+   sabor/JSON. Quantidade é de 1 a 100. IDs precisam existir no MongoDB.
+5. Em caso de sucesso, o servidor retorna `201 Created` com `id`, `clienteId`,
+   `colaboradorId` (do token), `colaboradorMatricula`, `criadoEm`, `itens`,
+   `subtotalPizzas` e `situacao=EM_ABERTO`.
+6. Confirme a persistência usando `GET /pedidos/ID_RETORNADO` com o mesmo token.
+
+### Restrições importantes
+
+- Uma requisição sem token recebe `401`; não é possível escolher o atendente
+  enviando `colaboradorId` no JSON.
+- Cliente ou pizza inexistentes retornam `404`; combinações de sabores inválidas,
+  quantidade inválida ou pedido vazio recebem `400`.
+- Campos de entrega, pagamento, observações e acréscimos ainda **não são
+  recebidos** neste endpoint. Em vez de descartá-los silenciosamente, o DTO
+  rejeita campos não suportados. Integração completa da tela vem com as tarefas
+  do Ronie e Cauã e com as regras da Sprint 4.
+- `DELETE /pedidos/{id}`, cálculo final, auditoria e impressão no servidor
+  **não foram implementados nesta entrega**.
 
 ## Testes
-- `./mvnw test` com Maven e dependências disponíveis.
-- Servir a interface e testar: login correto/incorreto, erro de permissão (403)
-  de funcionário na API de colaboradores, cadastro e busca de cliente,
-  recuperação por SMTP, redefinição de senha e logout.
-- Os testes automatizados de unidade foram adicionados em `src/test`.
 
-## Limitações para próxima sprint
-- Não há ainda pedido persistido, catálogo pesquisável completo ou auditoria.
-- O token em memória exige nova autenticação após reinício da API.
-- Para produção, avaliar HTTPS, limitação de tentativas de login, sessão persistida,
-  política de privacidade e proteção de dados pessoais.
+```powershell
+.\mvnw.cmd test
+```
+
+Há testes unitários do serviço de pedidos, do envio de e-mail simulado e
+rejeição de campos não suportados, além dos testes já presentes no ZIP.
+Teste real de SMTP requer credenciais válidas e teste de persistência exige MongoDB.
+
+## Alterações e escopo
+
+Ver `RELATORIO_PB02_SPRINT3_JOAO.md` para a lista de arquivos, critérios de
+validação e responsabilidades conforme o planejamento de sprints.

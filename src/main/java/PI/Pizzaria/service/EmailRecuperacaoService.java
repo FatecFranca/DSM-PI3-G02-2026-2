@@ -12,20 +12,29 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class EmailRecuperacaoService {
     private final ObjectProvider<JavaMailSender> mailSender;
+    private final String host;
     private final String remetente;
 
     public EmailRecuperacaoService(ObjectProvider<JavaMailSender> mailSender,
+                                  @Value("${spring.mail.host:}") String host,
                                   @Value("${app.mail.from:}") String remetente) {
         this.mailSender = mailSender;
+        this.host = host;
         this.remetente = remetente;
     }
 
-    public void enviarCodigo(String destinatario, String codigo) {
-        JavaMailSender servidor = mailSender.getIfAvailable();
-        if (servidor == null || remetente == null || remetente.isBlank()) {
+    public void verificarConfiguracao() {
+        // A mesma resposta é usada para todos os e-mails se não houver SMTP configurado.
+        if (host == null || host.isBlank() || remetente == null || remetente.isBlank()
+                || mailSender.getIfAvailable() == null) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Recuperação por e-mail não configurada. Contate o administrador.");
+                    "Recuperação por e-mail não configurada. Verifique o SMTP e o remetente.");
         }
+    }
+
+    public void enviarCodigo(String destinatario, String codigo) {
+        verificarConfiguracao();
+        JavaMailSender servidor = mailSender.getIfAvailable();
         SimpleMailMessage mensagem = new SimpleMailMessage();
         mensagem.setFrom(remetente);
         mensagem.setTo(destinatario);
@@ -36,7 +45,7 @@ public class EmailRecuperacaoService {
             servidor.send(mensagem);
         } catch (MailException e) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Não foi possível enviar o e-mail. Tente novamente mais tarde.");
+                    "Não foi possível enviar o e-mail. Verifique a configuração SMTP e tente novamente.");
         }
     }
 }

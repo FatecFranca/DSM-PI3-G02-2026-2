@@ -43,6 +43,7 @@ public class AuthServicy {
     public void solicitarRecuperacao(String email) {
         if (email == null || email.isBlank())
             throw new IllegalArgumentException("Informe o e-mail do colaborador.");
+        emailRecuperacaoService.verificarConfiguracao();
         // Não diferencia e-mail existente de inexistente na resposta pública.
         Optional<Colaborador> registro = colaboradorRepository.findByEmail(email.trim().toLowerCase());
         if (registro.isEmpty()) return;
