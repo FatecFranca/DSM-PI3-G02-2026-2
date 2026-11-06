@@ -15,7 +15,7 @@ parte do ZIP mais recente enviado pela equipe; não substitui as demais tarefas 
   meio (dois sabores distintos), preparo assada por padrão ou pré-assada e
   preço-base único independente da escolha dos sabores.
 - Os pedidos são gravados na coleção MongoDB `pedidos`, inicialmente
-  `EM_ABERTO`. O campo `subtotalPizzas` **não** é o total final com entrega e
+  `EM_ABERTO`. O campo `subtotalItens` **não** é o total final com entrega e
   pagamento, que serão implementados na Sprint 4.
 - A tela protótipo de pedidos continua em desenvolvimento. Por segurança,
   a impressão é cancelada se a API rejeitar o salvamento; não considerar essa
@@ -120,7 +120,7 @@ Este é um **endpoint para testar o back-end**, não a tela pronta do Cauã.
    sabor/JSON. Quantidade é de 1 a 100. IDs precisam existir no MongoDB.
 5. Em caso de sucesso, o servidor retorna `201 Created` com `id`, `clienteId`,
    `colaboradorId` (do token), `colaboradorMatricula`, `criadoEm`, `itens`,
-   `subtotalPizzas` e `situacao=EM_ABERTO`.
+   `subtotalItens` e `situacao=EM_ABERTO`.
 6. Confirme a persistência usando `GET /pedidos/ID_RETORNADO` com o mesmo token.
 
 ### Restrições importantes
