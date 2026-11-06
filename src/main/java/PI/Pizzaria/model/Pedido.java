@@ -17,7 +17,7 @@ public class Pedido {
     private String colaboradorMatricula;
     private Instant criadoEm;
     private List<ItemPedido> itens;
-    private BigDecimal subtotalPizzas;
+    private BigDecimal subtotalItens;
     private String situacao;
 
     public String getId() { return id; }
@@ -32,8 +32,8 @@ public class Pedido {
     public void setCriadoEm(Instant criadoEm) { this.criadoEm = criadoEm; }
     public List<ItemPedido> getItens() { return itens; }
     public void setItens(List<ItemPedido> itens) { this.itens = itens; }
-    public BigDecimal getSubtotalPizzas() { return subtotalPizzas; }
-    public void setSubtotalPizzas(BigDecimal subtotalPizzas) { this.subtotalPizzas = subtotalPizzas; }
+    public BigDecimal getSubtotalItens() { return subtotalItens; }
+    public void setSubtotalItens(BigDecimal subtotalItens) { this.subtotalItens = subtotalItens; }
     public String getSituacao() { return situacao; }
     public void setSituacao(String situacao) { this.situacao = situacao; }
 }
