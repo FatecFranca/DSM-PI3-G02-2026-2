@@ -29,7 +29,14 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(autorizacaoInterceptor)
-                .addPathPatterns("/clientes", "/clientes/**", "/colaboradores", "/colaboradores/**",
-                        "/pizzas", "/pizzas/**", "/pedidos", "/pedidos/**", "/auth/admin/**", "/auth/logout");
+                .addPathPatterns(
+                    "/clientes", "/clientes/**",
+                    "/colaboradores", "/colaboradores/**",
+                    "/pizzas", "/pizzas/**",
+                    "/produtos", "/produtos/**",
+                    "/pedidos", "/pedidos/**",
+                    "/auth/admin/**",
+                    "/auth/logout"
+                );
     }
 }
