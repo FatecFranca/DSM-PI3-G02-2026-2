@@ -31,8 +31,19 @@ public class ClienteController {
                 .body(novoCliente);
     }
 
+    
     @GetMapping("/{termo}")
-    public List<Cliente> buscar(@PathVariable String termo) {
-        return clienteService.buscar(termo);
+    public ResponseEntity<List<Cliente>> buscar(
+        @PathVariable String termo) {
+
+        return ResponseEntity.ok(
+            clienteService.buscar(termo));
     }
+
+    @GetMapping
+    public ResponseEntity<List<Cliente>> listarTodos() {
+        return ResponseEntity.ok(
+            clienteService.listarTodos());
+    }
+
 }
