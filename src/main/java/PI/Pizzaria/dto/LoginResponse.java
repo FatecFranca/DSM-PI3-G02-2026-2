@@ -1,18 +1,20 @@
 package PI.Pizzaria.dto;
 
 public class LoginResponse {
-    private String matricula;
-    private String perfil;
+    private final String matricula;
+    private final String perfil;
+    private final String nome;
+    private final String token;
 
-    public String getMatricula(String matricula){
-        return matricula;
-    }
-    public String getPerfil(String perfil){
-        return perfil;
-    }
-
-    public LoginResponse(String matricula, String perfil){
+    public LoginResponse(String matricula, String perfil, String nome, String token) {
         this.matricula = matricula;
         this.perfil = perfil;
+        this.nome = nome;
+        this.token = token;
     }
+
+    public String getMatricula() { return matricula; }
+    public String getPerfil() { return perfil; }
+    public String getNome() { return nome; }
+    public String getToken() { return token; }
 }
