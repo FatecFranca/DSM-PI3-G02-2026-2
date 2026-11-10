@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.model.Produto;
@@ -73,5 +74,12 @@ public class ProdutoController {
                 produtoService.atualizar(id, produto, usuarioAutenticado);
 
         return ResponseEntity.ok(atualizado);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable String id) {
+
+    produtoService.excluir(id);
+    return ResponseEntity.noContent().build();
     }
 }

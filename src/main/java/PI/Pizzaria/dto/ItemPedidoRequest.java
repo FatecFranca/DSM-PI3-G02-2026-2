@@ -17,6 +17,7 @@ public class ItemPedidoRequest {
 
     private String observacao;
     private List<String> acrescimos;
+    private List<String> ingredientesRemovidos;
 
     public String getProdutoId() {
         return produtoId;
@@ -72,6 +73,14 @@ public class ItemPedidoRequest {
 
     public void setAcrescimos(List<String> acrescimos) {
         this.acrescimos = acrescimos;
+    }
+
+    public List<String> getIngredientesRemovidos() {
+    return ingredientesRemovidos;
+    }
+
+    public void setIngredientesRemovidos(List<String> ingredientesRemovidos) {
+        this.ingredientesRemovidos = ingredientesRemovidos;
     }
 
     @JsonAnySetter

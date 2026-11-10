@@ -28,6 +28,8 @@ public class PedidoService {
     private final ClienteRepository clienteRepository;
     private final ProdutoRepository produtoRepository;
     private final String precoBaseConfigurado;
+    private static final BigDecimal PRECO_POR_ACRESCIMO =
+        new BigDecimal("5.00");
 
     public PedidoService(
             PedidoRepository pedidoRepository,
@@ -236,13 +238,60 @@ public class PedidoService {
          * na implementação responsável por essa regra.
          */
         item.setObservacao(dados.getObservacao());
-        item.setAcrescimos(dados.getAcrescimos());
+
+        // item.setAcrescimos(dados.getAcrescimos());
+        List<String> acrescimos =
+        normalizarIngredientes(dados.getAcrescimos(), "acréscimos");
+
+        List<String> removidos =
+                normalizarIngredientes(
+                        dados.getIngredientesRemovidos(),
+                        "ingredientes removidos");
+
+        item.setAcrescimos(acrescimos);
+        item.setIngredientesRemovidos(removidos);
+
+        // Cada ingrediente adicional custa R$ 5,00.
+        BigDecimal valorAdicional =
+                PRECO_POR_ACRESCIMO.multiply(
+                        BigDecimal.valueOf(acrescimos.size()));
+
+        // Preço unitário com os adicionais.
+        BigDecimal precoFinalUnitario =
+                precoUnitario.add(valorAdicional);
+
+        item.setPrecoUnitario(precoFinalUnitario);
+
+        // Subtotal considera também a quantidade.
 
         item.setSubtotal(
                 precoUnitario.multiply(
                         BigDecimal.valueOf(quantidade)));
 
         return item;
+    }
+
+    private List<String> normalizarIngredientes(
+        List<String> ingredientes,
+        String descricao) {
+
+    if (ingredientes == null) {
+        return new ArrayList<>();
+    }
+
+    List<String> resultado = new ArrayList<>();
+
+    for (String ingrediente : ingredientes) {
+
+        if (ingrediente == null || ingrediente.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Existem ingredientes inválidos em " + descricao + ".");
+        }
+
+        resultado.add(ingrediente.trim());
+    }
+
+        return resultado;
     }
 
     private Produto buscarProduto(String id) {
@@ -292,5 +341,9 @@ public class PedidoService {
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "Preço-base das pizzas inválido. Configure um valor positivo com até duas casas decimais.");
         }
+    }
+
+    public List<Pedido> listarTodos() {
+        return pedidoRepository.findAll();
     }
 }

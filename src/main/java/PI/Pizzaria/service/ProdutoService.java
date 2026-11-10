@@ -43,7 +43,8 @@ public class ProdutoService {
     }
 
     public List<Produto> buscarPorNome(String nome) {
-        return produtoRepository.findByNomeContainingIgnoreCase(nome);
+        return produtoRepository.findByNomeContainingIgnoreCaseOrCategoriaIgnoreCase(nome, nome);
+        // return produtoRepository.findByNomeContainingIgnoreCase(nome);
     }
 
     public List<Produto> buscarPorCategoria(String categoria) {
@@ -89,5 +90,10 @@ public class ProdutoService {
         if (produto.getEstoque() < 0) {
             throw new IllegalArgumentException("O estoque não pode ser negativo.");
         }
+    }
+
+    public void excluir(String id) {
+        Produto produto = buscarPorId(id);
+        produtoRepository.delete(produto);
     }
 }

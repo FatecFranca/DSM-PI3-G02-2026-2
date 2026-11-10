@@ -1,5 +1,6 @@
 package PI.Pizzaria.controller;
 
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,5 +34,10 @@ public class PedidoController {
     @GetMapping("/{id}")
     public ResponseEntity<Pedido> buscarPorId(@PathVariable String id) {
         return ResponseEntity.ok(pedidoService.buscarPorId(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Pedido>> listarTodos() {
+        return ResponseEntity.ok(pedidoService.listarTodos());
     }
 }
