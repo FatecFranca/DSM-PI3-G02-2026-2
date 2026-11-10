@@ -1,33 +1,11 @@
-/**
- * api.js — ponto único de integração com a API REST (Spring Boot).
- *
- * Contrato REAL (conferido no código do back-end):
- *   POST /auth/login             { matricula, senha }  -> { matricula, perfil }   (401 + texto se errar)
- *   POST /auth/recuperar-senha   { email }             -> texto com o código
- *   POST /auth/redefinir-senha   { email, codigo, novaSenha } -> texto
- *   GET  /pizzas                 -> [{ id, nome, sabor, tamanho, preco }]
- *   POST /colaboradores          { nome, matricula, email, senha, perfil }
- *
- * Contrato PROPOSTO (back-end ainda não tem ClienteController):
- *   POST /clientes                        { nome, telefone, cpf, email?, endereco?, dataNascimento? }
- *   GET  /clientes/busca?nome=...         -> [{ id, nome, telefone, ... }]
- *   GET  /clientes/busca?telefone=...     -> [{ id, nome, telefone, ... }]
- */
-
 const API_BASE_URL = 'http://localhost:8080';
 
-/**
- * Requisição genérica. O back-end hoje devolve erros como TEXTO PURO
- * (ex.: 401 "Matricula ou Senha incorreta"), não JSON — por isso o corpo
- * é lido como texto e só convertido em JSON quando for possível.
- */
 async function requisitar(caminho, opcoes = {}) {
   const cabecalhos = {
     'Content-Type': 'application/json',
     ...(opcoes.headers || {}),
   };
 
-  // Quando o back-end passar a emitir token (JWT), ele já segue no header.
   const token = localStorageObterToken();
   if (token) {
     cabecalhos['Authorization'] = `Bearer ${token}`;
@@ -45,7 +23,7 @@ async function requisitar(caminho, opcoes = {}) {
   try {
     corpo = texto ? JSON.parse(texto) : null;
   } catch {
-    corpo = texto; // resposta em texto puro
+    corpo = texto; 
   }
 
   if (!resposta.ok) {
@@ -57,7 +35,7 @@ async function requisitar(caminho, opcoes = {}) {
 
 function extrairMensagemDeErro(corpo, status) {
   if (corpo && typeof corpo === 'object') {
-    // { mensagem } (formato combinado) ou { message } (erro padrão do Spring)
+
     const mensagem = corpo.mensagem || corpo.message;
     if (mensagem) return mensagem;
   }
@@ -78,9 +56,7 @@ class ErroApi extends Error {
   }
 }
 
-/* ---------- Autenticação ---------- */
 
-/** POST /auth/login -> { matricula, perfil } ("administrador" | "funcionario") */
 function login(matricula, senha) {
   return requisitar('/auth/login', {
     method: 'POST',
@@ -88,7 +64,6 @@ function login(matricula, senha) {
   });
 }
 
-/** POST /auth/recuperar-senha — o back-end usa E-MAIL (não matrícula) e responde com texto. */
 function solicitarRecuperacaoSenha(email) {
   return requisitar('/auth/recuperar-senha', {
     method: 'POST',
@@ -96,7 +71,6 @@ function solicitarRecuperacaoSenha(email) {
   });
 }
 
-/** POST /auth/redefinir-senha */
 function redefinirSenha(email, codigo, novaSenha) {
   return requisitar('/auth/redefinir-senha', {
     method: 'POST',
@@ -104,27 +78,10 @@ function redefinirSenha(email, codigo, novaSenha) {
   });
 }
 
-/* ---------- Clientes ---------- */
-
-/**
- * Busca por nome OU telefone (Documento 01). Se o termo for só números
- * (e tiver pelo menos 8 dígitos), busca por telefone; senão, por nome.
- * Telefones são guardados/buscados SOMENTE COM DÍGITOS (busca é exata no back-end).
- * ROTA PROPOSTA — confirmar com o Ronie.
- */
 function buscarClientes(termo) {
-  const digitos = somenteDigitos(termo);
-  const ehTelefone = digitos.length >= 8 && digitos.length === termo.replace(/[\s()+-]/g, '').length;
-  const consulta = ehTelefone
-    ? `telefone=${encodeURIComponent(digitos)}`
-    : `nome=${encodeURIComponent(termo.trim())}`;
-  return requisitar(`/clientes/busca?${consulta}`, { method: 'GET' });
+  return requisitar(`/clientes/busca?termo=${encodeURIComponent(termo.trim())}`, { method: 'GET' });
 }
 
-/**
- * POST /clientes — campos conforme model Cliente.java:
- *   obrigatórios: nome, telefone, cpf | opcionais: email, endereco (TEXTO único), dataNascimento (yyyy-MM-dd)
- */
 function cadastrarCliente(dadosCliente) {
   return requisitar('/clientes', {
     method: 'POST',
@@ -132,9 +89,6 @@ function cadastrarCliente(dadosCliente) {
   });
 }
 
-/* ---------- Colaboradores (restrito a administrador) ---------- */
-
-/** POST /colaboradores { nome, matricula, email, senha, perfil: "administrador" | "funcionario" } */
 function cadastrarColaborador(dadosColaborador) {
   return requisitar('/colaboradores', {
     method: 'POST',
@@ -142,11 +96,24 @@ function cadastrarColaborador(dadosColaborador) {
   });
 }
 
-/* ---------- Produtos ---------- */
+function listarColaboradores() {
+  return requisitar('/colaboradores', { method: 'GET' });
+}
 
-/** GET /pizzas -> [{ id, nome, sabor, tamanho, preco }] */
+function redefinirSenhaPeloAdministrador(colaboradorId, novaSenha) {
+  return requisitar('/auth/admin/redefinir-senha', {
+    method: 'POST',
+    body: JSON.stringify({ colaboradorId, novaSenha }),
+  });
+}
+
+function encerrarSessaoNoServidor() {
+  return requisitar('/auth/logout', { method: 'POST' });
+}
+
+
 function listarProdutos() {
-  return requisitar('/pizzas', { method: 'GET' });
+  return requisitar('/produtos', { method: 'GET' });
 }
 
 /* ---------- CEP (ViaCEP, direto do navegador) ---------- */
@@ -165,7 +132,7 @@ async function consultarCep(cep) {
   }
 }
 
-/* ---------- Pedidos (ainda sem endpoint no back-end) ---------- */
+/* ---------- Pedidos ---------- */
 
 function criarPedido(dadosPedido) {
   return requisitar('/pedidos', { method: 'POST', body: JSON.stringify(dadosPedido) });
@@ -176,17 +143,12 @@ function cancelarPedido(pedidoId) {
 }
 
 /* ---------- Sessão local ---------- */
-/*
- * O back-end ainda NÃO emite token: o login devolve só { matricula, perfil }.
- * Por isso "logado" = existe usuário salvo. Se virar JWT, o token também é guardado.
- */
 
-function localStorageSalvarSessao({ matricula, perfil, nome, token, modoTeste }) {
-  if (token) localStorage.setItem('cityPizzas_token', token);
-  localStorage.setItem(
-    'cityPizzas_usuario',
-    JSON.stringify({ matricula, perfil, nome, modoTeste: Boolean(modoTeste) })
-  );
+
+function localStorageSalvarSessao({ matricula, perfil, nome, token }) {
+  if (!token || !matricula || !perfil) throw new Error('Sessão inválida recebida do servidor.');
+  localStorage.setItem('cityPizzas_token', token);
+  localStorage.setItem('cityPizzas_usuario', JSON.stringify({ matricula, perfil, nome }));
 }
 
 function localStorageObterToken() {
@@ -204,19 +166,15 @@ function localStorageEncerrarSessao() {
 }
 
 function usuarioEstaLogado() {
-  return Boolean(localStorageObterUsuario());
+  return Boolean(localStorageObterUsuario() && localStorageObterToken());
 }
 
 function usuarioEhAdministrador() {
   return localStorageObterUsuario()?.perfil === 'administrador';
 }
 
-/** Sessão criada pelo link "modo de teste" — só nela é permitido usar dados de exemplo. */
-function emModoTeste() {
-  return Boolean(localStorageObterUsuario()?.modoTeste);
-}
+function emModoTeste() { return false; }
 
-/** Nome para exibir (o login ainda não devolve nome, então cai para a matrícula). */
 function nomeDoUsuarioLogado() {
   const usuario = localStorageObterUsuario();
   return usuario?.nome || usuario?.matricula || 'Usuário';
