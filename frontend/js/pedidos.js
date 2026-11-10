@@ -3,6 +3,7 @@ let itensPedido = [];
 let proximoUid = 1;
 let catalogoProdutos = [];
 let enviandoPedido = false;
+let precosPizza = { precoBase: null, precoMeioAMeio: null };
 
 const VALOR_ACRESCIMO = 5.0;
 const QUANTIDADE_MIN = 1;
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   configurarBuscaCliente();
   restaurarClienteRecemCadastrado();
+  await carregarPrecosPizza();
   await configurarBuscaProduto();
   configurarModalidade();
 
@@ -88,7 +90,6 @@ function configurarBuscaCliente() {
       const botao = document.createElement('button');
       botao.type = 'button';
       botao.textContent = `${cliente.nome} — ${formatarTelefone(cliente.telefone)}`;
-      resultados.appendChild(botao);
       botao.addEventListener('click', () => {
         clienteSelecionado = cliente;
         document.getElementById('nomeCliente').textContent = clienteSelecionado.nome;
@@ -121,6 +122,16 @@ function ehPizza(produto) {
   return String(produto?.categoria || '').trim().toUpperCase() === 'PIZZA';
 }
 
+async function carregarPrecosPizza() {
+  try {
+    const precos = await consultarPrecosPizza();
+    precosPizza.precoBase = Number(precos.precoBase);
+    precosPizza.precoMeioAMeio = Number(precos.precoMeioAMeio);
+  } catch (erro) {
+    mostrarErro(`Preços de pizza indisponíveis: ${erro.message}. Configure PIZZA_PRECO_BASE no servidor.`);
+  }
+}
+
 function precoDoProduto(produto) {
   const preco = Number(produto?.preco);
   return Number.isFinite(preco) ? preco : 0;
@@ -131,13 +142,13 @@ function nomeExibicaoProduto(produto) {
   if (produto.sabor && produto.sabor !== produto.nome) {
     return `${produto.nome} (${produto.sabor})`;
   }
-  return produto.nome;
+  return [produto.nome, produto.apresentacaoVolume].filter(Boolean).join(' — ');
 }
 
 function normalizarTexto(texto) {
   return String(texto || '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 }
 
@@ -145,7 +156,7 @@ function filtrarCatalogo(termo) {
   const busca = normalizarTexto(termo.trim());
   if (!busca) return [];
   return catalogoProdutos.filter((p) =>
-    [p.nome, p.sabor, p.categoria].some((campo) => normalizarTexto(campo).includes(busca))
+    [p.nome, p.sabor, p.categoria, p.apresentacaoVolume].some((campo) => normalizarTexto(campo).includes(busca))
   );
 }
 
@@ -207,7 +218,9 @@ async function configurarBuscaProduto() {
     produtos.slice(0, 30).forEach((produto) => {
       const botao = document.createElement('button');
       botao.type = 'button';
-      botao.textContent = `${nomeExibicaoProduto(produto)} — ${formatarMoeda(precoDoProduto(produto))}`;
+      const preco = ehPizza(produto) ? precosPizza.precoBase : precoDoProduto(produto);
+      botao.textContent = `${nomeExibicaoProduto(produto)} — ${
+        preco != null && Number.isFinite(preco) ? formatarMoeda(preco) : 'preço a configurar'}`;
       botao.addEventListener('click', () => escolher(produto));
       resultados.appendChild(botao);
     });
@@ -248,13 +261,18 @@ function itemPorUid(uid) {
   return itensPedido.find((item) => item.uid === uid);
 }
 
-/** Valor de uma unidade do item: base + R$ 5,00 por acréscimo. */
+/** Usa os preços oficiais configurados no back-end, nunca a média dos sabores. */
 function valorUnitarioItem(item) {
-  return precoDoProduto(item.produto) + item.acrescimos.length * VALOR_ACRESCIMO;
+  let preco = precoDoProduto(item.produto);
+  if (ehPizza(item.produto)) {
+    preco = item.meioAMeio ? precosPizza.precoMeioAMeio : precosPizza.precoBase;
+    if (!Number.isFinite(preco) || preco === null) return null;
+  }
+  return preco + item.acrescimos.length * VALOR_ACRESCIMO;
 }
 
 function subtotalItem(item) {
-  return valorUnitarioItem(item) * item.quantidade;
+  return (valorUnitarioItem(item) ?? 0) * item.quantidade;
 }
 
 function nomeItemCompleto(item) {
@@ -311,7 +329,7 @@ function criarLinhaItem(item) {
   const precos = el(
     'div',
     { className: 'item-pedido__precos' },
-    el('div', { 'data-subtotal-item': item.uid, text: formatarMoeda(subtotalItem(item)) }),
+    el('div', { 'data-subtotal-item': item.uid, text: valorUnitarioItem(item) == null ? 'A configurar' : formatarMoeda(subtotalItem(item)) }),
     el('div', { className: 'item-pedido__detalhe-preco', 'data-detalhe-item': item.uid, text: textoDetalhePreco(item) }),
     el('button', {
       type: 'button',
@@ -321,11 +339,17 @@ function criarLinhaItem(item) {
     })
   );
 
-  return el('div', { className: 'item-pedido', 'data-uid': item.uid }, el('div', { className: 'item-pedido__imagem', 'aria-hidden': 'true' }), info, preparo, precos);
+  const classeImagem = !pizza ? 'item-pedido__imagem--produto'
+    : item.meioAMeio ? 'item-pedido__imagem--meio' : '';
+  return el('div', { className: 'item-pedido', 'data-uid': item.uid },
+    el('div', { className: `item-pedido__imagem ${classeImagem}`.trim(), 'aria-hidden': 'true' }),
+    info, preparo, precos);
 }
 
 function textoDetalhePreco(item) {
-  const partes = [`${item.quantidade} × ${formatarMoeda(valorUnitarioItem(item))}`];
+  const preco = valorUnitarioItem(item);
+  if (preco == null) return 'Preço das pizzas pendente de configuração';
+  const partes = [`${item.quantidade} × ${formatarMoeda(preco)}`];
   if (item.acrescimos.length) partes.push(`inclui ${item.acrescimos.length} × ${formatarMoeda(VALOR_ACRESCIMO)} de acréscimo`);
   return partes.join(' · ');
 }
@@ -335,7 +359,7 @@ function atualizarLinha(item) {
   const subtotal = document.querySelector(`[data-subtotal-item="${item.uid}"]`);
   const detalhe = document.querySelector(`[data-detalhe-item="${item.uid}"]`);
   if (nome) nome.textContent = nomeItemCompleto(item);
-  if (subtotal) subtotal.textContent = formatarMoeda(subtotalItem(item));
+  if (subtotal) subtotal.textContent = valorUnitarioItem(item) == null ? 'A configurar' : formatarMoeda(subtotalItem(item));
   if (detalhe) detalhe.textContent = textoDetalhePreco(item);
   atualizarTotal();
 }
@@ -585,6 +609,9 @@ function validarPedido() {
     if (!Number.isInteger(item.quantidade) || item.quantidade < QUANTIDADE_MIN || item.quantidade > QUANTIDADE_MAX) {
       return `Quantidade inválida em "${nome}": use um valor de ${QUANTIDADE_MIN} a ${QUANTIDADE_MAX}.`;
     }
+    if (ehPizza(item.produto) && valorUnitarioItem(item) == null) {
+      return 'O preço da pizza não está configurado no servidor. Configure PIZZA_PRECO_BASE (e, se necessário, PIZZA_PRECO_MEIO_A_MEIO).';
+    }
     if (item.meioAMeio && !item.segundoProduto) {
       document.querySelector(`.item-pedido[data-uid="${item.uid}"] select[aria-label="Segundo sabor"]`)?.classList.add('campo-invalido');
       return `Escolha o 2º sabor da pizza meio a meio "${nome}".`;
@@ -678,34 +705,6 @@ async function finalizarEImprimir() {
   const subtotalServidor = Number(pedidoSalvo?.subtotalItens);
   confirmarNumeroPedido();
   salvarPedidoNoHistoricoLocal(registroLocal);
-  try {
-    await criarPedido(dadosPedido);
-    mostrarSucesso('Pedido registrado com sucesso.');
-  } catch (erro) {
-    // Impede emitir um pedido que o servidor não registrou.
-    mostrarErro(`Pedido não registrado (${erro.message}). A impressão foi cancelada.`);
-    return;
-  }
-
-  salvarPedidoNoHistoricoLocal({
-    numero: document.getElementById('numeroPedido').textContent,
-    cliente: clienteSelecionado.nome,
-    itens: itensPedido.map((item) => ({
-      nome: nomeExibicaoProduto(item.produto),
-      preparo: item.tipoPreparo === 'ASSADA' ? 'Assada' : 'Pré-assada',
-      observacao: item.observacao,
-      acrescimos: item.acrescimos,
-      preco: item.produto.preco,
-    })),
-    modalidade,
-    endereco: dadosPedido.endereco,
-    contatoRetirada: dadosPedido.contatoRetirada,
-    formaPagamento: dadosPedido.formaPagamento,
-    total: calcularTotal(),
-    atendente: localStorageObterUsuario()?.nome || 'Usuário',
-    criadoEm: new Date().toISOString(),
-  });
-
   window.print();
 
   reiniciarPedido();
@@ -716,7 +715,7 @@ async function finalizarEImprimir() {
   if (Number.isFinite(subtotalServidor)) {
     texto += ` Subtotal confirmado pelo servidor: ${formatarMoeda(subtotalServidor)}.`;
     if (Math.abs(subtotalServidor - registroLocal.total) > 0.005) {
-      texto += ` Difere do total impresso (${formatarMoeda(registroLocal.total)}): o servidor ainda não soma os acréscimos de R$ 5,00 (regra do Ronie).`;
+      texto += ` Atenção: diverge do valor exibido na impressão (${formatarMoeda(registroLocal.total)}).`;
     }
   }
   mostrarSucesso(texto);

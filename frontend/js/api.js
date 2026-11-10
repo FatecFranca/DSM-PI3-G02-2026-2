@@ -8,7 +8,7 @@
  *   GET  /pizzas                 -> [{ id, nome, sabor, tamanho, preco }]
  *   POST /colaboradores          { nome, matricula, email, senha, perfil }
  *
- *   GET  /https://github.com/joaopedrotrevisanutooliveira-web/Pizzaria_PI/pull/18/conflict?name=frontend%252Fjs%252Fapi.js&ancestor_oid=6b44d63bd7c1360ef35129897adfa47583baadfd&base_oid=c73ada9e9d420f439ab1311ea6183686897c2873&head_oid=b5e10334d7ebcd3c908897d3566711bad67f8984clientes/busca?termo=... -> [{ id, nome, telefone, endereco, ... }]
+ *   GET  /clientes/busca?termo=... -> [{ id, nome, telefone, endereco, ... }]
  *   POST /clientes                    -> cliente cadastrado
  *   GET  /colaboradores               -> lista (somente administrador)
  *   POST /auth/admin/redefinir-senha  -> redefinição pelo administrador
@@ -138,6 +138,24 @@ function listarProdutos() {
   return requisitar('/produtos', { method: 'GET' });
 }
 
+function cadastrarProduto(dadosProduto) {
+  return requisitar('/produtos', { method: 'POST', body: JSON.stringify(dadosProduto) });
+}
+
+function atualizarProduto(produtoId, dadosProduto) {
+  return requisitar(`/produtos/${encodeURIComponent(produtoId)}`, {
+    method: 'PUT', body: JSON.stringify(dadosProduto),
+  });
+}
+
+function excluirProduto(produtoId) {
+  return requisitar(`/produtos/${encodeURIComponent(produtoId)}`, { method: 'DELETE' });
+}
+
+function pesquisarProdutos(termo) {
+  return requisitar(`/produtos/buscar?nome=${encodeURIComponent(termo.trim())}`, { method: 'GET' });
+}
+
 /* ---------- CEP (ViaCEP, direto do navegador) ---------- */
 
 async function consultarCep(cep) {
@@ -158,6 +176,14 @@ async function consultarCep(cep) {
 
 function criarPedido(dadosPedido) {
   return requisitar('/pedidos', { method: 'POST', body: JSON.stringify(dadosPedido) });
+}
+
+function pesquisarPedidosAbertos(termo = '') {
+  return requisitar(`/pedidos/abertos?termo=${encodeURIComponent(termo.trim())}`, { method: 'GET' });
+}
+
+function consultarPrecosPizza() {
+  return requisitar('/pedidos/precos', { method: 'GET' });
 }
 
 function cancelarPedido(pedidoId) {

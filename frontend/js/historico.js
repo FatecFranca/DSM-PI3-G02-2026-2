@@ -1,59 +1,106 @@
+/** Histórico de impressão local + pesquisa de pedidos abertos no MongoDB. */
 document.addEventListener('DOMContentLoaded', () => {
-  const historico = JSON.parse(localStorage.getItem('cityPizzas_historicoPedidos') || '[]');
-  const container = document.getElementById('listaPedidos');
-  const listaVazia = document.getElementById('listaVazia');
-
-  if (historico.length === 0) {
-    listaVazia.style.display = 'block';
+  if (!usuarioEstaLogado()) {
+    window.location.href = 'index.html';
     return;
   }
-
-  container.innerHTML = historico.map(renderizarPedido).join('');
+  const formulario = document.getElementById('formBuscarPedidosAbertos');
+  formulario.addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    carregarPedidosAbertos(document.getElementById('termoPedidoAberto').value);
+  });
+  carregarPedidosAbertos('');
+  carregarHistoricoLocal();
 });
 
-function renderizarPedido(pedido) {
-  const dataFormatada = new Date(pedido.criadoEm).toLocaleString('pt-BR');
-  const modalidadeTexto = pedido.modalidade === 'ENTREGA' ? 'Entrega' : 'Retirada';
-  const enderecoOuContato =
-    pedido.modalidade === 'ENTREGA'
-      ? `${pedido.endereco?.rua || ''}, ${pedido.endereco?.numero || ''} — ${pedido.endereco?.bairro || ''}`
-      : `${pedido.contatoRetirada?.nome || ''} — ${pedido.contatoRetirada?.telefone || ''}`;
-
-  const itensHtml = pedido.itens
-    .map((item) => {
-      const acrescimosTexto = item.acrescimos?.length
-        ? ` + acréscimo: ${item.acrescimos.join(', ')}`
-        : '';
-      const obsTexto = item.observacao ? ` (${item.observacao})` : '';
-      const qtd = item.quantidade && item.quantidade > 1 ? `${item.quantidade}× ` : '';
-      const preparo = item.preparo ? ` — ${item.preparo}` : '';
-      return `<li>${qtd}${item.nome}${preparo}${obsTexto}${acrescimosTexto} — ${formatarMoeda(item.preco)}${qtd ? ' cada' : ''}</li>`;
-    })
-    .join('');
-
-  return `
-    <div class="cadastro__cartao">
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
-        <strong>${pedido.numero}</strong>
-        <span style="font-size:0.82rem; color:#4A4A4A;">${dataFormatada}</span>
-      </div>
-      <div style="font-size:0.9rem; margin-bottom:10px;">
-        <div><strong>Cliente:</strong> ${pedido.cliente}</div>
-        <div><strong>${modalidadeTexto}:</strong> ${enderecoOuContato}</div>
-        <div><strong>Pagamento:</strong> ${traduzirPagamento(pedido.formaPagamento)}</div>
-        <div><strong>Atendente:</strong> ${pedido.atendente}</div>
-      </div>
-      <ul style="margin:0 0 10px; padding-left:18px; font-size:0.88rem;">${itensHtml}</ul>
-      <div style="text-align:right; font-weight:700;">Total: ${formatarMoeda(pedido.total)}</div>
-    </div>
-  `;
+function novoElemento(tag, texto, classe) {
+  const elemento = document.createElement(tag);
+  if (texto != null) elemento.textContent = String(texto);
+  if (classe) elemento.className = classe;
+  return elemento;
 }
 
-function traduzirPagamento(codigo) {
-  const mapa = { DINHEIRO: 'Dinheiro', PIX: 'Pix', CREDITO: 'Crédito', DEBITO: 'Débito' };
-  return mapa[codigo] || codigo;
+function montarCartao() {
+  return novoElemento('article', null, 'cadastro__cartao');
 }
 
 function formatarMoeda(valor) {
-  return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+function formatarData(data) {
+  if (!data) return 'Data não informada';
+  const valor = new Date(data);
+  return Number.isNaN(valor.getTime()) ? 'Data inválida' : valor.toLocaleString('pt-BR');
+}
+
+async function carregarPedidosAbertos(termo) {
+  const destino = document.getElementById('listaPedidosAbertos');
+  const aviso = document.getElementById('avisoPedidosAbertos');
+  destino.replaceChildren();
+  aviso.textContent = 'Consultando pedidos no servidor...';
+  try {
+    const resultados = await pesquisarPedidosAbertos(termo);
+    aviso.textContent = resultados.length
+      ? `${resultados.length} pedido(s) em aberto encontrado(s).`
+      : 'Nenhum pedido em aberto encontrado para essa pesquisa.';
+    resultados.forEach((resumo) => {
+      const p = resumo.pedido;
+      const cartao = montarCartao();
+      const titulo = novoElemento('strong', `Pedido ${p.id || '(sem ID)'}`);
+      const meta = novoElemento('p', `${formatarData(p.criadoEm)} · Situação: ${p.situacao || 'EM_ABERTO'}`, 'pedido-aberto__meta');
+      const dados = novoElemento('div');
+      dados.append(
+        novoElemento('p', `Cliente: ${resumo.clienteNome || 'Não encontrado'} · ${formatarTelefone(resumo.clienteTelefone)}`),
+        novoElemento('p', `Atendente (matrícula): ${p.colaboradorMatricula || '—'}`)
+      );
+      const itens = novoElemento('ul', null, 'pedido-aberto__itens');
+      (p.itens || []).forEach(item => {
+        const primeiro = item.sabor || item.nomeProduto || 'Produto';
+        const segundo = item.meioAMeio ? ` + ½ ${item.segundoSabor || '2º sabor'}` : '';
+        const nome = item.meioAMeio ? `½ ${primeiro}${segundo}` : primeiro;
+        itens.appendChild(novoElemento('li', `${item.quantidade || 1} × ${nome} — ${formatarMoeda(item.subtotal)}`));
+      });
+      const subtotal = novoElemento('p', `Subtotal dos itens: ${formatarMoeda(p.subtotalItens)}`);
+      subtotal.style.fontWeight = '700';
+      cartao.append(titulo, meta, dados, itens, subtotal);
+      destino.appendChild(cartao);
+    });
+  } catch (erro) {
+    aviso.textContent = `Não foi possível consultar pedidos: ${erro.message}`;
+    if (erro.status === 401) {
+      localStorageEncerrarSessao();
+      window.location.href = 'index.html';
+    }
+  }
+}
+
+function carregarHistoricoLocal() {
+  let historico = [];
+  try { historico = JSON.parse(localStorage.getItem('cityPizzas_historicoPedidos') || '[]'); }
+  catch (_) { historico = []; }
+  const container = document.getElementById('listaPedidos');
+  const listaVazia = document.getElementById('listaVazia');
+  if (!Array.isArray(historico) || !historico.length) {
+    listaVazia.style.display = 'block';
+    return;
+  }
+  historico.forEach(pedido => {
+    const cartao = montarCartao();
+    cartao.append(
+      novoElemento('strong', pedido.numero || pedido.id || 'Pedido'),
+      novoElemento('p', formatarData(pedido.criadoEm), 'pedido-aberto__meta'),
+      novoElemento('p', `Cliente: ${pedido.cliente || '—'}`),
+      novoElemento('p', `Modalidade: ${pedido.modalidade === 'ENTREGA' ? 'Entrega' : 'Retirada'}`),
+      novoElemento('p', `Atendente: ${pedido.atendente || '—'}`)
+    );
+    const itens = novoElemento('ul', null, 'pedido-aberto__itens');
+    (pedido.itens || []).forEach(item => {
+      const qtd = item.quantidade || 1;
+      itens.appendChild(novoElemento('li', `${qtd} × ${item.nome || 'Produto'} — ${formatarMoeda(item.preco)} cada`));
+    });
+    const subtotal = novoElemento('p', `Subtotal impresso: ${formatarMoeda(pedido.total)}`);
+    subtotal.style.fontWeight = '700';
+    cartao.append(itens, subtotal);
+    container.appendChild(cartao);
+  });
 }

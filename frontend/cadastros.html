@@ -20,7 +20,7 @@
 
   <main class="cadastro">
     <h1 class="cadastro__titulo">Cadastros</h1>
-    <p class="cadastro__subtitulo">Busque ou cadastre clientes. Somente o administrador pode cadastrar colaboradores.</p>
+    <p class="cadastro__subtitulo">Gerencie clientes e produtos do catálogo. Somente o administrador pode cadastrar colaboradores.</p>
 
     <div class="cadastro__abas">
       <button type="button" class="cadastro__aba ativa" data-aba="cliente">Cliente</button>
@@ -134,16 +134,42 @@
         </div>
       </div>
 
+      <!-- PB07/PB08: cadastro, manutenção e apresentações de bebidas. -->
       <div id="abaProduto" class="aba-conteudo" style="display:none;">
-        <div class="cadastro__bloqueado" id="bloqueioProduto">
-          Cadastro de produto disponível apenas para funcionários autorizados.
-        </div>
+        <h2 class="cadastro__subtitulo">Cadastrar ou editar produto</h2>
+        <div id="mensagemProduto" class="mensagem" role="status" aria-live="polite"></div>
+        <form id="formProduto" novalidate>
+          <input type="hidden" id="produtoId" />
+          <div class="campo"><label for="produtoNome">Nome do produto</label><input id="produtoNome" type="text" maxlength="120" required placeholder="Ex.: Coca-Cola, Pizza Calabresa" /></div>
+          <div class="campo__linha-dupla">
+            <div class="campo"><label for="produtoCategoria">Categoria</label><select id="produtoCategoria" required><option value="">Selecione</option><option value="PIZZA">Pizza</option><option value="BEBIDA">Bebida</option><option value="OUTRO">Outro</option></select></div>
+            <div class="campo"><label for="produtoPreco">Preço (R$)</label><input id="produtoPreco" type="number" min="0" step="0.01" inputmode="decimal" required placeholder="0,00" /></div>
+          </div>
+          <div class="campo__linha-dupla">
+            <div class="campo"><label for="produtoEstoque">Estoque (unidades)</label><input id="produtoEstoque" type="number" min="0" step="1" required value="0" /></div>
+            <div class="campo" id="campoSaborProduto" style="display:none;"><label for="produtoSabor">Sabor da pizza</label><input id="produtoSabor" type="text" maxlength="120" placeholder="Ex.: Calabresa" /></div>
+            <div class="campo" id="campoVolumeProduto" style="display:none;"><label for="produtoVolume">Apresentação / volume da bebida</label><input id="produtoVolume" type="text" maxlength="80" placeholder="Ex.: lata 350 ml, caçulinha, 2 L" /></div>
+          </div>
+          <div class="cadastro__botoes-produto">
+            <button id="botaoSalvarProduto" class="botao botao--preto" type="submit">Cadastrar produto</button>
+            <button id="botaoLimparProduto" class="botao botao--contorno" type="button">Limpar / cancelar edição</button>
+          </div>
+          <p class="pedido__aviso">O sistema identifica automaticamente o colaborador responsável. O preço-base das pizzas é definido no servidor.</p>
+        </form>
+        <hr />
+        <h2 class="cadastro__subtitulo">Catálogo de produtos</h2>
+        <form id="formBuscaProdutoCadastro" class="campo" autocomplete="off">
+          <label for="buscaProdutoCadastro">Pesquisar por nome, categoria ou apresentação</label>
+          <div class="cadastro__busca"><input id="buscaProdutoCadastro" type="search" placeholder="Ex.: Coca-Cola, pizza, 350 ml" /><button type="submit" class="botao botao--preto">Pesquisar</button></div>
+        </form>
+        <div id="listaProdutosCadastro" aria-live="polite"></div>
       </div>
 
     </div>
   </main>
 
   <script src="js/api.js"></script>
+  <script src="js/produtos.js"></script>
   <script src="js/cadastros.js"></script>
 </body>
 </html>
