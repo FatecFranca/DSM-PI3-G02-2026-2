@@ -25,7 +25,9 @@ function renderizarPedido(pedido) {
         ? ` + acréscimo: ${item.acrescimos.join(', ')}`
         : '';
       const obsTexto = item.observacao ? ` (${item.observacao})` : '';
-      return `<li>${item.nome} — ${item.preparo}${obsTexto}${acrescimosTexto} — ${formatarMoeda(item.preco)}</li>`;
+      const qtd = item.quantidade && item.quantidade > 1 ? `${item.quantidade}× ` : '';
+      const preparo = item.preparo ? ` — ${item.preparo}` : '';
+      return `<li>${qtd}${item.nome}${preparo}${obsTexto}${acrescimosTexto} — ${formatarMoeda(item.preco)}${qtd ? ' cada' : ''}</li>`;
     })
     .join('');
 

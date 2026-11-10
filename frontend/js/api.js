@@ -8,7 +8,7 @@
  *   GET  /pizzas                 -> [{ id, nome, sabor, tamanho, preco }]
  *   POST /colaboradores          { nome, matricula, email, senha, perfil }
  *
- *   GET  /clientes/busca?termo=... -> [{ id, nome, telefone, endereco, ... }]
+ *   GET  /https://github.com/joaopedrotrevisanutooliveira-web/Pizzaria_PI/pull/18/conflict?name=frontend%252Fjs%252Fapi.js&ancestor_oid=6b44d63bd7c1360ef35129897adfa47583baadfd&base_oid=c73ada9e9d420f439ab1311ea6183686897c2873&head_oid=b5e10334d7ebcd3c908897d3566711bad67f8984clientes/busca?termo=... -> [{ id, nome, telefone, endereco, ... }]
  *   POST /clientes                    -> cliente cadastrado
  *   GET  /colaboradores               -> lista (somente administrador)
  *   POST /auth/admin/redefinir-senha  -> redefinição pelo administrador
@@ -16,11 +16,6 @@
 
 const API_BASE_URL = 'http://localhost:8080';
 
-/**
- * Requisição genérica. O back-end hoje devolve erros como TEXTO PURO
- * (ex.: 401 "Matricula ou Senha incorreta"), não JSON — por isso o corpo
- * é lido como texto e só convertido em JSON quando for possível.
- */
 async function requisitar(caminho, opcoes = {}) {
   const cabecalhos = {
     'Content-Type': 'application/json',
@@ -45,7 +40,7 @@ async function requisitar(caminho, opcoes = {}) {
   try {
     corpo = texto ? JSON.parse(texto) : null;
   } catch {
-    corpo = texto; // resposta em texto puro
+    corpo = texto; 
   }
 
   if (!resposta.ok) {
@@ -57,7 +52,7 @@ async function requisitar(caminho, opcoes = {}) {
 
 function extrairMensagemDeErro(corpo, status) {
   if (corpo && typeof corpo === 'object') {
-    // { mensagem } (formato combinado) ou { message } (erro padrão do Spring)
+
     const mensagem = corpo.mensagem || corpo.message;
     if (mensagem) return mensagem;
   }
@@ -78,9 +73,7 @@ class ErroApi extends Error {
   }
 }
 
-/* ---------- Autenticação ---------- */
 
-/** POST /auth/login -> { matricula, perfil } ("administrador" | "funcionario") */
 function login(matricula, senha) {
   return requisitar('/auth/login', {
     method: 'POST',
@@ -88,7 +81,6 @@ function login(matricula, senha) {
   });
 }
 
-/** POST /auth/recuperar-senha — o back-end usa E-MAIL (não matrícula) e responde com texto. */
 function solicitarRecuperacaoSenha(email) {
   return requisitar('/auth/recuperar-senha', {
     method: 'POST',
@@ -96,7 +88,6 @@ function solicitarRecuperacaoSenha(email) {
   });
 }
 
-/** POST /auth/redefinir-senha */
 function redefinirSenha(email, codigo, novaSenha) {
   return requisitar('/auth/redefinir-senha', {
     method: 'POST',
@@ -119,9 +110,6 @@ function cadastrarCliente(dadosCliente) {
   });
 }
 
-/* ---------- Colaboradores (restrito a administrador) ---------- */
-
-/** POST /colaboradores { nome, matricula, email, senha, perfil: "administrador" | "funcionario" } */
 function cadastrarColaborador(dadosColaborador) {
   return requisitar('/colaboradores', {
     method: 'POST',
@@ -146,9 +134,8 @@ function encerrarSessaoNoServidor() {
 
 /* ---------- Produtos ---------- */
 
-/** GET /pizzas -> [{ id, nome, sabor, tamanho, preco }] */
 function listarProdutos() {
-  return requisitar('/pizzas', { method: 'GET' });
+  return requisitar('/produtos', { method: 'GET' });
 }
 
 /* ---------- CEP (ViaCEP, direto do navegador) ---------- */
@@ -167,7 +154,7 @@ async function consultarCep(cep) {
   }
 }
 
-/* ---------- Pedidos (ainda sem endpoint no back-end) ---------- */
+/* ---------- Pedidos ---------- */
 
 function criarPedido(dadosPedido) {
   return requisitar('/pedidos', { method: 'POST', body: JSON.stringify(dadosPedido) });
@@ -178,6 +165,8 @@ function cancelarPedido(pedidoId) {
 }
 
 /* ---------- Sessão local ---------- */
+
+
 /*
  * A sessão só é considerada válida no front-end com token; o back-end confirma
  * o token e as permissões a cada requisição protegida.
@@ -214,7 +203,6 @@ function usuarioEhAdministrador() {
 /** Mantido para compatibilidade com o protótipo de pedidos, mas sem acesso de teste. */
 function emModoTeste() { return false; }
 
-/** Nome para exibir (o login ainda não devolve nome, então cai para a matrícula). */
 function nomeDoUsuarioLogado() {
   const usuario = localStorageObterUsuario();
   return usuario?.nome || usuario?.matricula || 'Usuário';

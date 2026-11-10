@@ -45,7 +45,7 @@
     </div>
 
     <div class="busca-produto">
-      <input type="text" id="campoBuscaProduto" placeholder="Produtos" autocomplete="off" />
+      <input type="text" id="campoBuscaProduto" placeholder="Buscar produto (nome, sabor ou categoria)" autocomplete="off" aria-label="Buscar produto" />
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="11" cy="11" r="7" stroke="#1A1A1A" stroke-width="1.6"/>
         <path d="M20 20l-3.5-3.5" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round"/>
@@ -56,6 +56,8 @@
     <section class="itens-pedido" id="itensPedido">
       <p class="pedido__vazio" id="pedidoVazio">Nenhum item adicionado ainda. Busque um produto acima.</p>
     </section>
+
+    <p class="pedido__aviso">Entrega, pagamento e observações gerais ainda não são gravados no servidor (Sprint 4); aparecem apenas na impressão.</p>
 
     <section class="modalidade">
       <div class="modalidade__opcoes">
@@ -79,7 +81,7 @@
           <input type="text" id="endBairro" placeholder="City Petrópolis" />
         </div>
         <div class="modalidade__valor-taxa">
-          <div id="valorTaxaEntrega">R$ 5,00</div>
+          <div id="valorTaxaEntrega" title="A taxa de entrega entra na Sprint 4">Taxa: Sprint 4</div>
         </div>
       </div>
 
@@ -105,7 +107,7 @@
       </select>
 
       <div class="pedido__total">
-        <span>Total:</span>
+        <span>Subtotal dos itens:</span>
         <div id="valorTotal">R$ 0,00</div>
       </div>
     </section>

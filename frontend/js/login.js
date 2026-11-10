@@ -1,8 +1,3 @@
-/**
- * login.js — login de funcionário (matrícula + senha) e recuperação de senha.
- * Integra com POST /auth/login, /auth/recuperar-senha e /auth/redefinir-senha.
- */
-
 document.addEventListener('DOMContentLoaded', () => {
   if (usuarioEstaLogado()) {
     window.location.href = 'cadastros.html';
@@ -107,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
         codigoJaSolicitado = true;
         campoCodigo.focus();
       } else {
-        // Etapa 2 — POST /auth/redefinir-senha { email, codigo, novaSenha }
         const codigo = campoCodigo.value.trim();
         const novaSenha = campoNovaSenha.value;
         if (!/^\d{6}$/.test(codigo) || novaSenha.length < 8) {

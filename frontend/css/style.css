@@ -1,9 +1,3 @@
-/* ============================================================
-   City Pizzas — estilos compartilhados
-   Fiel à paleta do protótipo: fundo amarelo-claro, bordas
-   pretas grossas, botões sólidos (preto / vermelho / verde).
-   ============================================================ */
-
 :root {
   --fundo: #F6DE9E;
   --fundo-campo: #FFFFFF;
@@ -716,3 +710,48 @@ button {
 .cadastro__resultado { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--cinza-borda); }
 #mensagemColaborador { margin-bottom:12px; color:var(--preto); }
 @media (max-width: 480px) { .cadastro__busca { flex-direction:column; } .cadastro__resultado { flex-direction:column; align-items:stretch; } }
+
+.pedido__aviso { font-size: 0.8rem; color: var(--cinza-texto); margin: 0 0 14px; }
+
+.item-pedido__linha { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.82rem; margin-bottom: 6px; }
+.item-pedido__linha select,
+.item-pedido__linha input[type="text"] {
+  padding: 5px 8px; border: 1px solid var(--preto); border-radius: 6px;
+  font-family: var(--fonte); font-size: 0.82rem; background-color: var(--fundo-campo);
+}
+.observacao__campo { width: 190px; max-width: 100%; }
+.acrescimo__campo { width: 150px; max-width: 100%; }
+
+.opcao-radio { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; cursor: pointer; }
+.opcao-radio input { accent-color: var(--preto); }
+
+.botao--link { background: none; border: none; text-decoration: underline; cursor: pointer; font-size: 0.8rem; color: var(--preto); padding: 0; }
+.acrescimo__remover { border: none; background: none; cursor: pointer; color: var(--vermelho-escuro); }
+.campo-invalido { border-color: var(--vermelho) !important; outline: 2px solid var(--vermelho); }
+
+.item-pedido__preparo { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.item-pedido__bloco { display: flex; flex-direction: column; align-items: flex-end; }
+
+.quantidade { display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; }
+.quantidade__botao {
+  width: 28px; height: 28px; border: 1px solid var(--preto); border-radius: 6px;
+  background: var(--fundo-campo); font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.quantidade__botao:hover { background: var(--fundo); }
+.quantidade__campo {
+  width: 52px; height: 28px; text-align: center; border: 1px solid var(--preto);
+  border-radius: 6px; font-family: var(--fonte); background: var(--fundo-campo);
+}
+
+.item-pedido__precos .item-pedido__detalhe-preco {
+  border: none; background: none; padding: 0; font-size: 0.72rem; color: var(--cinza-texto);
+}
+
+@media (max-width: 720px) {
+  .item-pedido__preparo, .item-pedido__bloco { align-items: flex-start; }
+}
+
+@media print {
+  .cabecalho, .busca-produto, .pedido__acoes-base, .pedido__acoes-topo, .item-pedido__remover,
+  .quantidade__botao, .acrescimo__adicionar, .acrescimo__remover, .pedido__aviso, #botaoTrocarCliente { display: none !important; }
+}

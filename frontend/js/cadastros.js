@@ -56,7 +56,6 @@ function configurarFormularioCliente() {
     rua: document.getElementById('rua'),
   };
 
-  // Veio da tela de pedidos (busca sem resultado)? Então volta pra lá com o cliente selecionado.
   const veioDoPedido = new URLSearchParams(window.location.search).get('origem') === 'pedidos';
 
   formulario.addEventListener('submit', async (evento) => {
@@ -69,15 +68,15 @@ function configurarFormularioCliente() {
 
     const dadosCliente = {
       nome: campos.nome.value.trim(),
-      telefone: somenteDigitos(campos.telefone.value), // guardado só com dígitos (busca por telefone é exata)
+      telefone: somenteDigitos(campos.telefone.value),
       cpf: somenteDigitos(campos.cpf.value),
       email: campos.email.value.trim() || undefined,
+      dataNascimento: campos.dataNascimento.value || undefined, 
       dataNascimento: campos.dataNascimento.value || undefined, // yyyy-MM-dd (LocalDate)
       endereco: montarEndereco(),
     };
 
     try {
-      // POST /clientes (rota proposta) -> cliente criado
       const criado = await cadastrarCliente(dadosCliente);
 
       if (veioDoPedido && criado && criado.id) {
@@ -276,6 +275,7 @@ function configurarCadastroColaborador() {
 function configurarSaida() {
   document.getElementById('linkSairCadastro').addEventListener('click', async (evento) => {
     evento.preventDefault();
+    try { await encerrarSessaoNoServidor(); } catch (_) {}
     try { await encerrarSessaoNoServidor(); } catch (_) { /* rede indisponível */ }
     localStorageEncerrarSessao();
     window.location.href = 'index.html';
