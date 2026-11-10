@@ -401,7 +401,9 @@ async function finalizarEImprimir() {
     await criarPedido(dadosPedido);
     mostrarSucesso('Pedido registrado com sucesso.');
   } catch (erro) {
-    mostrarErro(`Pedido não sincronizado com o servidor (${erro.message}). Imprimindo mesmo assim.`);
+    // Impede emitir um pedido que o servidor não registrou.
+    mostrarErro(`Pedido não registrado (${erro.message}). A impressão foi cancelada.`);
+    return;
   }
 
   salvarPedidoNoHistoricoLocal({

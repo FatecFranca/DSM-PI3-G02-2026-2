@@ -30,6 +30,6 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(autorizacaoInterceptor)
                 .addPathPatterns("/clientes", "/clientes/**", "/colaboradores", "/colaboradores/**",
-                        "/pizzas", "/pizzas/**", "/auth/admin/**", "/auth/logout");
+                        "/pizzas", "/pizzas/**", "/pedidos", "/pedidos/**", "/auth/admin/**", "/auth/logout");
     }
 }
