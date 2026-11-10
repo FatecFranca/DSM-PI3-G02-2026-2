@@ -83,10 +83,12 @@ function configurarBuscaCliente() {
       return;
     }
 
+    resultados.replaceChildren();
     clientes.forEach((cliente) => {
       const botao = document.createElement('button');
       botao.type = 'button';
       botao.textContent = `${cliente.nome} — ${formatarTelefone(cliente.telefone)}`;
+      resultados.appendChild(botao);
       botao.addEventListener('click', () => {
         clienteSelecionado = cliente;
         document.getElementById('nomeCliente').textContent = clienteSelecionado.nome;
@@ -676,6 +678,33 @@ async function finalizarEImprimir() {
   const subtotalServidor = Number(pedidoSalvo?.subtotalItens);
   confirmarNumeroPedido();
   salvarPedidoNoHistoricoLocal(registroLocal);
+  try {
+    await criarPedido(dadosPedido);
+    mostrarSucesso('Pedido registrado com sucesso.');
+  } catch (erro) {
+    // Impede emitir um pedido que o servidor não registrou.
+    mostrarErro(`Pedido não registrado (${erro.message}). A impressão foi cancelada.`);
+    return;
+  }
+
+  salvarPedidoNoHistoricoLocal({
+    numero: document.getElementById('numeroPedido').textContent,
+    cliente: clienteSelecionado.nome,
+    itens: itensPedido.map((item) => ({
+      nome: nomeExibicaoProduto(item.produto),
+      preparo: item.tipoPreparo === 'ASSADA' ? 'Assada' : 'Pré-assada',
+      observacao: item.observacao,
+      acrescimos: item.acrescimos,
+      preco: item.produto.preco,
+    })),
+    modalidade,
+    endereco: dadosPedido.endereco,
+    contatoRetirada: dadosPedido.contatoRetirada,
+    formaPagamento: dadosPedido.formaPagamento,
+    total: calcularTotal(),
+    atendente: localStorageObterUsuario()?.nome || 'Usuário',
+    criadoEm: new Date().toISOString(),
+  });
 
   window.print();
 

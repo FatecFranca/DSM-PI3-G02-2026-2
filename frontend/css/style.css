@@ -704,6 +704,7 @@ button {
   }
 }
 
+/* Sprint 2 — busca e cadastro de colaboradores no padrão visual existente. */
 .cadastro__busca { display:flex; gap:10px; }
 .cadastro__busca input { min-width:0; flex:1; }
 .cadastro__resultado { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--cinza-borda); }

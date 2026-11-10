@@ -1,5 +1,7 @@
 package PI.Pizzaria.model;
 
+import java.time.Instant;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -20,6 +22,17 @@ public class Colaborador {
     private String email;
     
     private String codigoRecuperacao;
+    private Instant validadeCodigoRecuperacao;
+    private int tentativasRecuperacao;
+
+    public Instant getValidadeCodigoRecuperacao() { return validadeCodigoRecuperacao; }
+    public void setValidadeCodigoRecuperacao(Instant validadeCodigoRecuperacao) {
+        this.validadeCodigoRecuperacao = validadeCodigoRecuperacao;
+    }
+    public int getTentativasRecuperacao() { return tentativasRecuperacao; }
+    public void setTentativasRecuperacao(int tentativasRecuperacao) {
+        this.tentativasRecuperacao = tentativasRecuperacao;
+    }
 
     public enum Perfil {
         administrador,

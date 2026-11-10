@@ -2,8 +2,10 @@ package PI.Pizzaria.service;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import PI.Pizzaria.exception.ColaboradorNotFoundException;
 import PI.Pizzaria.model.Colaborador;
@@ -11,82 +13,87 @@ import PI.Pizzaria.repository.ColaboradorRepository;
 
 @Service
 public class ColaboradorService {
-
     private final ColaboradorRepository colaboradorRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final SessaoService sessaoService;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public ColaboradorService(ColaboradorRepository colaboradorRepository) {
+    public ColaboradorService(ColaboradorRepository colaboradorRepository, SessaoService sessaoService) {
         this.colaboradorRepository = colaboradorRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.sessaoService = sessaoService;
     }
 
-    // Cadastrar colaborador
     public Colaborador cadastrar(Colaborador colaborador) {
+        validarDados(colaborador, true);
+        if (colaboradorRepository.existsByMatricula(colaborador.getMatricula()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula já cadastrada.");
+        if (colaboradorRepository.existsByEmail(colaborador.getEmail()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado.");
 
-        if (colaboradorRepository.existsByMatricula(colaborador.getMatricula())) {
-            throw new IllegalArgumentException("Matrícula já cadastrada.");
-        }
-
-        if (colaboradorRepository.existsByEmail(colaborador.getEmail())) {
-            throw new IllegalArgumentException("E-mail já cadastrado.");
-        }
-
+        colaborador.setId(null);
         colaborador.setSenha(passwordEncoder.encode(colaborador.getSenha()));
-
+        colaborador.setCodigoRecuperacao(null);
+        colaborador.setValidadeCodigoRecuperacao(null);
+        colaborador.setTentativasRecuperacao(0);
         return colaboradorRepository.save(colaborador);
     }
 
-    // Listar todos os colaboradores
-    public List<Colaborador> listarTodos() {
-        return colaboradorRepository.findAll();
-    }
+    public List<Colaborador> listarTodos() { return colaboradorRepository.findAll(); }
 
-    // Buscar colaborador pelo ID
     public Colaborador buscarPorId(String id) {
         return colaboradorRepository.findById(id)
-                .orElseThrow(() ->
-                    new ColaboradorNotFoundException("Colaborador não encontrado."));
+                .orElseThrow(() -> new ColaboradorNotFoundException("Colaborador não encontrado."));
     }
 
-    // Atualizar colaborador    
-public Colaborador atualizar(String id, Colaborador dados) {
+    public Colaborador atualizar(String id, Colaborador dados) {
+        Colaborador colaborador = buscarPorId(id);
+        validarDados(dados, false);
+        if (!dados.getMatricula().equals(colaborador.getMatricula())
+                && colaboradorRepository.existsByMatricula(dados.getMatricula()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Matrícula já cadastrada.");
+        if (!dados.getEmail().equals(colaborador.getEmail())
+                && colaboradorRepository.existsByEmail(dados.getEmail()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado.");
+        impedirRemocaoUltimoAdministrador(colaborador, dados.getPerfil());
 
-    Colaborador colaborador = buscarPorId(id);
-
-    if (dados.getMatricula() != null
-            && !dados.getMatricula().equals(colaborador.getMatricula())
-            && colaboradorRepository.existsByMatricula(dados.getMatricula())) {
-
-        throw new IllegalArgumentException("Matrícula já cadastrada.");
+        colaborador.setNome(dados.getNome().trim());
+        colaborador.setMatricula(dados.getMatricula().trim());
+        colaborador.setEmail(dados.getEmail().trim().toLowerCase());
+        colaborador.setPerfil(dados.getPerfil());
+        if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
+            AuthServicy.validarNovaSenha(dados.getSenha());
+            colaborador.setSenha(passwordEncoder.encode(dados.getSenha()));
+        }
+        Colaborador atualizado = colaboradorRepository.save(colaborador);
+        sessaoService.encerrarSessoesDoColaborador(id);
+        return atualizado;
     }
 
-    if (dados.getEmail() != null
-            && !dados.getEmail().equalsIgnoreCase(colaborador.getEmail())
-            && colaboradorRepository.existsByEmail(dados.getEmail())) {
-
-        throw new IllegalArgumentException("E-mail já cadastrado.");
-    }
-
-    colaborador.setNome(dados.getNome());
-    colaborador.setMatricula(dados.getMatricula());
-    colaborador.setEmail(dados.getEmail());
-    colaborador.setPerfil(dados.getPerfil());
-
-    // Só altera a senha se uma nova senha foi informada
-    if (dados.getSenha() != null && !dados.getSenha().isBlank()) {
-
-        colaborador.setSenha(
-                passwordEncoder.encode(dados.getSenha())
-        );
-    }
-
-    return colaboradorRepository.save(colaborador);
-}
-
-    // Excluir colaborador
     public void excluir(String id) {
         Colaborador colaborador = buscarPorId(id);
+        impedirRemocaoUltimoAdministrador(colaborador, null);
         colaboradorRepository.delete(colaborador);
+        sessaoService.encerrarSessoesDoColaborador(id);
     }
 
+    private void validarDados(Colaborador colaborador, boolean exigirSenha) {
+        if (colaborador.getNome() == null || colaborador.getNome().isBlank()
+                || colaborador.getMatricula() == null || colaborador.getMatricula().isBlank()
+                || colaborador.getEmail() == null
+                || !colaborador.getEmail().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
+                || colaborador.getPerfil() == null) {
+            throw new IllegalArgumentException("Informe nome, matrícula, e-mail válido e perfil.");
+        }
+        colaborador.setNome(colaborador.getNome().trim());
+        colaborador.setMatricula(colaborador.getMatricula().trim());
+        colaborador.setEmail(colaborador.getEmail().trim().toLowerCase());
+        if (exigirSenha) AuthServicy.validarNovaSenha(colaborador.getSenha());
+    }
+
+    private void impedirRemocaoUltimoAdministrador(Colaborador atual, Colaborador.Perfil novoPerfil) {
+        if (atual.getPerfil() == Colaborador.Perfil.administrador
+                && novoPerfil != Colaborador.Perfil.administrador
+                && colaboradorRepository.countByPerfil(Colaborador.Perfil.administrador) <= 1) {
+            throw new IllegalArgumentException("Não é possível remover o último administrador.");
+        }
+    }
 }

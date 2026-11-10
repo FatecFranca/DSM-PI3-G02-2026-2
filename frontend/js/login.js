@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alternarCarregando(botaoEntrar, true, 'Entrando...', 'Entrar');
 
     try {
+      // POST /auth/login -> { matricula, nome, perfil, token }
       const resultado = await login(matricula, senha);
 
       if (!resultado || !resultado.perfil) {
@@ -93,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
       botaoRecuperar.disabled = true;
 
       if (!codigoJaSolicitado) {
+        // Etapa 1 — POST /auth/recuperar-senha { email }
         await solicitarRecuperacaoSenha(email);
         mostrarInfo('Se o e-mail estiver cadastrado, você receberá um código.');
         etapaCodigo.style.display = 'block';
