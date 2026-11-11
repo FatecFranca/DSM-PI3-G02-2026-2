@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import PI.Pizzaria.dto.ItemPedidoRequest;
 import PI.Pizzaria.dto.PedidoRequest;
 import PI.Pizzaria.model.Colaborador;
+import PI.Pizzaria.model.Endereco;
 import PI.Pizzaria.model.ItemPedido;
 import PI.Pizzaria.model.Pedido;
 import PI.Pizzaria.model.Produto;
@@ -68,41 +69,39 @@ class PedidoServiceTest {
     }
 
     @Test
-    void criaPedidoComClienteEFuncionarioAutenticadoEAssadaComoPadrao() {
+    void criaPedidoComClienteFuncionarioEModalidadePagamentoEndereco() {
 
-        Pedido pedido =
-                service.criar(
-                        requisicao(item("pizza-1")),
-                        atendente);
+        PedidoRequest request = requisicao(item("pizza-1"));
+        request.setModalidade("ENTREGA");
+        request.setFormaPagamento("PIX");
 
-        assertEquals(
-                "cliente-1",
-                pedido.getClienteId());
+        Endereco endereco = new Endereco();
+        endereco.setCep("14400000");
+        endereco.setRua("Rua Exemplo");
+        endereco.setNumero("100");
+        endereco.setBairro("Centro");
+        endereco.setCidade("Franca");
+        request.setEnderecoEntrega(endereco);
 
-        assertEquals(
-                "colaborador-1",
-                pedido.getColaboradorId());
+        Pedido pedido = service.criar(request, atendente);
 
-        assertEquals(
-                "1001",
-                pedido.getColaboradorMatricula());
-
+        assertEquals("cliente-1", pedido.getClienteId());
+        assertEquals("colaborador-1", pedido.getColaboradorId());
+        assertEquals("1001", pedido.getColaboradorMatricula());
         assertNotNull(pedido.getCriadoEm());
-
-        assertEquals(
-                "EM_ABERTO",
-                pedido.getSituacao());
-
-        assertEquals(
-                ItemPedido.TipoPreparo.ASSADA,
+        assertEquals("EM_ABERTO", pedido.getSituacao());
+        assertEquals(ItemPedido.TipoPreparo.ASSADA,
                 pedido.getItens().get(0).getTipoPreparo());
+        assertEquals(new BigDecimal("59.00"), pedido.getSubtotalItens());
 
-        assertEquals(
-                new BigDecimal("59.00"),
-                pedido.getSubtotalItens());
+        assertEquals("ENTREGA", pedido.getModalidade());
+        assertEquals("PIX", pedido.getFormaPagamento());
+        assertNotNull(pedido.getEnderecoEntrega());
+        assertEquals("14400000", pedido.getEnderecoEntrega().getCep());
+        assertNull(pedido.getTaxaEntrega());
+        assertNull(pedido.getTotal());
 
-        verify(pedidoRepository)
-                .save(any(Pedido.class));
+        verify(pedidoRepository).save(any(Pedido.class));
     }
 
     @Test

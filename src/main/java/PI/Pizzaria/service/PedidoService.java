@@ -111,9 +111,13 @@ public class PedidoService {
         pedido.setCriadoEm(Instant.now());
         pedido.setItens(itens);
 
-        // O nome ainda é subtotalItens no model atual.
-        // Mantemos por enquanto para não quebrar outras partes do projeto.
         pedido.setSubtotalItens(subtotal);
+
+        // Persistência da Sprint 4. As regras de modalidade, CEP, taxa,
+        // pagamento e total são implementadas pelos responsáveis dessas tarefas.
+        pedido.setModalidade(dados.getModalidade());
+        pedido.setEnderecoEntrega(dados.getEnderecoEntrega());
+        pedido.setFormaPagamento(dados.getFormaPagamento());
 
         pedido.setSituacao("EM_ABERTO");
 
