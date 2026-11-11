@@ -43,10 +43,15 @@ class PedidoServiceTest {
                 clienteRepository,
                 produtoRepository,
                 "59.00",
-                "");
+                "",
+                "7.00");
 
-        when(clienteRepository.existsById("cliente-1"))
-                .thenReturn(true);
+        PI.Pizzaria.model.Cliente cliente = new PI.Pizzaria.model.Cliente();
+        cliente.setId("cliente-1");
+        cliente.setNome("Maria");
+        cliente.setTelefone("16999999999");
+        when(clienteRepository.findById("cliente-1"))
+                .thenReturn(Optional.of(cliente));
 
         when(pedidoRepository.save(any(Pedido.class)))
                 .thenAnswer(invocacao -> invocacao.getArgument(0));
@@ -98,8 +103,8 @@ class PedidoServiceTest {
         assertEquals("PIX", pedido.getFormaPagamento());
         assertNotNull(pedido.getEnderecoEntrega());
         assertEquals("14400000", pedido.getEnderecoEntrega().getCep());
-        assertNull(pedido.getTaxaEntrega());
-        assertNull(pedido.getTotal());
+        assertEquals(new BigDecimal("7.00"), pedido.getTaxaEntrega());
+        assertEquals(new BigDecimal("66.00"), pedido.getTotal());
 
         verify(pedidoRepository).save(any(Pedido.class));
     }
@@ -152,7 +157,7 @@ class PedidoServiceTest {
     void configuracaoSeparadaDePreAssadaNaoFazMediaDosSabores() {
         PedidoService comPrecoPreAssada = new PedidoService(
                 pedidoRepository, clienteRepository, produtoRepository,
-                "59.00", "49.00");
+                "59.00", "49.00", "7.00");
         ItemPedidoRequest metade = item("pizza-1");
         metade.setMeioAMeio(true);
         metade.setSegundoProdutoId("pizza-2");
@@ -262,8 +267,8 @@ class PedidoServiceTest {
     @Test
     void rejeitaClienteInexistenteEAtendenteNaoAutenticado() {
 
-        when(clienteRepository.existsById("cliente-1"))
-                .thenReturn(false);
+        when(clienteRepository.findById("cliente-1"))
+                .thenReturn(Optional.empty());
 
         assertThrows(
                 ResponseStatusException.class,
@@ -287,13 +292,75 @@ class PedidoServiceTest {
                         clienteRepository,
                         produtoRepository,
                         "",
-                        "");
+                        "",
+                        "7.00");
 
         assertThrows(
                 ResponseStatusException.class,
                 () -> semPreco.criar(
                         requisicao(item("pizza-1")),
                         atendente));
+    }
+
+    @Test
+    void retiradaNaoCobraTaxaENaoGuardaEndereco() {
+        PedidoRequest requisicao = requisicao(item("pizza-1"));
+        Endereco rua = new Endereco();
+        rua.setRua("Não gravar na retirada");
+        requisicao.setEnderecoEntrega(rua);
+        Pedido pedido = service.criar(requisicao, atendente);
+        assertEquals("RETIRADA", pedido.getModalidade());
+        assertNull(pedido.getEnderecoEntrega());
+        assertEquals(new BigDecimal("0.00"), pedido.getTaxaEntrega());
+        assertEquals(new BigDecimal("59.00"), pedido.getTotal());
+    }
+
+    @Test
+    void entregaSemEnderecoFalhaSemSalvar() {
+        PedidoRequest requisicao = requisicao(item("pizza-1"));
+        requisicao.setModalidade("ENTREGA");
+        assertThrows(IllegalArgumentException.class, () -> service.criar(requisicao, atendente));
+        verify(pedidoRepository, never()).save(any());
+    }
+
+    @Test
+    void entregaSemTaxaConfiguradaNaoFingeSerGratuita() {
+        PedidoService semTaxa = new PedidoService(pedidoRepository, clienteRepository,
+                produtoRepository, "59.00", "", "");
+        PedidoRequest requisicao = requisicao(item("pizza-1"));
+        requisicao.setModalidade("ENTREGA");
+        Endereco e = new Endereco();
+        e.setRua("Rua"); e.setNumero("2"); e.setBairro("Bairro"); e.setCidade("Franca");
+        requisicao.setEnderecoEntrega(e);
+        assertThrows(ResponseStatusException.class, () -> semTaxa.criar(requisicao, atendente));
+    }
+
+    @Test
+    void atualizaPedidoExistenteSemDuplicarEFinalizaSomenteUmaVez() {
+        Pedido pedido = service.criar(requisicao(item("pizza-1")), atendente);
+        pedido.setId("pedido-1");
+        when(pedidoRepository.findById("pedido-1")).thenReturn(Optional.of(pedido));
+        PedidoRequest novo = requisicao(item("pizza-2"));
+        novo.setFormaPagamento("PIX");
+        Pedido atualizado = service.atualizar("pedido-1", novo, atendente);
+        assertEquals("pedido-1", atualizado.getId());
+        assertEquals("PIX", atualizado.getFormaPagamento());
+        assertEquals("EM_ABERTO", atualizado.getSituacao());
+        Pedido finalizado = service.finalizar("pedido-1", atendente);
+        assertEquals("FINALIZADO", finalizado.getSituacao());
+        assertNotNull(finalizado.getFinalizadoEm());
+        assertEquals("1001", finalizado.getFinalizadoPorMatricula());
+        assertThrows(ResponseStatusException.class, () -> service.atualizar("pedido-1", novo, atendente));
+        assertThrows(ResponseStatusException.class, () -> service.finalizar("pedido-1", atendente));
+    }
+
+    @Test
+    void usaTelefoneEditadoSomenteNoPedido() {
+        PedidoRequest requisicao = requisicao(item("pizza-1"));
+        requisicao.setTelefoneContato("(16) 98888-1234");
+        Pedido pedido = service.criar(requisicao, atendente);
+        assertEquals("16988881234", pedido.getTelefoneContato());
+        assertEquals("16999999999", clienteRepository.findById("cliente-1").orElseThrow().getTelefone());
     }
 
     private PedidoRequest requisicao(
@@ -304,6 +371,7 @@ class PedidoServiceTest {
 
         request.setClienteId("cliente-1");
         request.setItens(List.of(item));
+        request.setModalidade("RETIRADA");
 
         return request;
     }

@@ -31,8 +31,21 @@
     <div id="listaPedidosAbertos" style="display:flex; flex-direction:column; gap:16px;"></div>
 
     <hr style="margin:32px 0" />
-    <h2>Pedidos impressos neste navegador</h2>
-    <p class="pedido__aviso">Registro local para consulta da impressão. Entrega e pagamento ainda não ficam persistidos na API nesta etapa (Sprint 4).</p>
+    <h2>Pedidos finalizados</h2>
+    <p class="pedido__aviso">Histórico salvo no servidor, inclusive pedidos confirmados sem impressão.</p>
+    <form id="formBuscarFinalizados" class="campo" autocomplete="off">
+      <label for="termoFinalizados">Pesquisar pedidos finalizados</label>
+      <div class="cadastro__busca">
+        <input type="search" id="termoFinalizados" placeholder="Cliente, telefone, ID ou matrícula" />
+        <button type="submit" class="botao botao--preto">Pesquisar</button>
+      </div>
+    </form>
+    <p id="avisoFinalizados" class="pedido__aviso" role="status" aria-live="polite"></p>
+    <div id="listaFinalizados" style="display:flex; flex-direction:column; gap:16px;"></div>
+
+    <hr style="margin:32px 0" />
+    <h2>Comprovantes impressos neste navegador</h2>
+    <p class="pedido__aviso">Registro de impressões confirmadas neste navegador. O pedido e seus valores ficam salvos no servidor.</p>
     <div id="listaVazia" class="pedido__vazio" style="display:none;">Nenhuma impressão registrada neste navegador.</div>
     <div id="listaPedidos" style="display:flex; flex-direction:column; gap:16px;"></div>
   </main>

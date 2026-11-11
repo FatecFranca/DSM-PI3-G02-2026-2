@@ -780,3 +780,32 @@ button {
   .cadastro__resultado-produto { flex-direction:column; align-items:stretch; }
   .cadastro__acoes-produto .botao { flex:1; }
 }
+
+/* Sprint 4: dados de entrega, total e confirmação de pedido */
+.pedido__contato { max-width:360px; }
+.pedido__contato input { width:100%; padding:10px 12px; border:1px solid var(--preto); border-radius:6px; }
+.modalidade__campos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.modalidade__valor-taxa { text-align:left; align-self:end; }
+.pedido__total { flex-wrap:wrap; justify-content:flex-end; }
+.pedido__total span { font-size:0.87rem; }
+.pedido__acoes-base { flex-wrap:wrap; }
+.popup-pedido[hidden], .comprovante-impressao { display:none; }
+.popup-pedido { position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px; }
+.popup-pedido__fundo { position:absolute; inset:0; background:rgba(0,0,0,0.6); }
+.popup-pedido__conteudo { position:relative; width:min(440px, 100%); background:#fff; border:2px solid var(--preto); border-radius:14px; padding:26px; box-shadow:0 8px 35px rgba(0,0,0,.25); }
+.popup-pedido__conteudo h2 { font-size:1.2rem; margin:0 0 10px; }
+.popup-pedido__conteudo p { margin:0 0 22px; font-size:0.92rem; }
+.popup-pedido__acoes { display:flex; flex-wrap:wrap; gap:10px; }
+.popup-pedido__acoes .botao { flex:1; min-width:145px; }
+@media(max-width:720px) { .modalidade__campos { grid-template-columns:1fr; } .pedido__total { justify-content:flex-start; } }
+@media print {
+  @page { size:auto; margin:10mm; }
+  body { background:white !important; }
+  body > .cabecalho, body > .pedido, #popupPedido { display:none !important; }
+  .comprovante-impressao { display:block !important; font-family:Arial,sans-serif; color:#000; max-width:85mm; margin:0 auto; font-size:11px; }
+  .comprovante-impressao h1 { font-size:18px; text-align:center; margin-bottom:4px; }
+  .comprovante-impressao h2 { font-size:13px; margin:12px 0 4px; }
+  .comprovante-impressao p { margin:3px 0; overflow-wrap:anywhere; }
+  .comprovante-impressao hr { border:0; border-top:1px dashed black; margin:9px 0; }
+  .comprovante-impressao .comprovante-total { font-size:16px; font-weight:700; margin-top:10px; }
+}
