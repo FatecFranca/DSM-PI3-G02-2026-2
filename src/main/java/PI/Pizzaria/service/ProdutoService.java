@@ -7,15 +7,20 @@ import org.springframework.stereotype.Service;
 
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.model.Produto;
+import PI.Pizzaria.model.ProdutoAuditoria;
 import PI.Pizzaria.repository.ProdutoRepository;
+import PI.Pizzaria.repository.ProdutoAuditoriaRepository;
 
 @Service
 public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
+    private final ProdutoAuditoriaRepository auditoriaRepository;
 
-    public ProdutoService(ProdutoRepository produtoRepository) {
+    public ProdutoService(ProdutoRepository produtoRepository,
+            ProdutoAuditoriaRepository auditoriaRepository) {
         this.produtoRepository = produtoRepository;
+        this.auditoriaRepository = auditoriaRepository;
     }
 
     public Produto cadastrar(Produto produto, Colaborador usuarioAutenticado) {
@@ -30,7 +35,9 @@ public class ProdutoService {
         produto.setAlteradoPorId(null);
         produto.setAlteradoEm(null);
 
-        return produtoRepository.save(produto);
+        Produto salvo = produtoRepository.save(produto);
+        auditoriaRepository.save(new ProdutoAuditoria(salvo, "CRIACAO", usuarioAutenticado));
+        return salvo;
     }
 
     public List<Produto> listarTodos() {
@@ -43,8 +50,7 @@ public class ProdutoService {
     }
 
     public List<Produto> buscarPorNome(String nome) {
-        return produtoRepository.findByNomeContainingIgnoreCaseOrCategoriaIgnoreCase(nome, nome);
-        // return produtoRepository.findByNomeContainingIgnoreCase(nome);
+        return produtoRepository.findByNomeContainingIgnoreCaseOrCategoriaIgnoreCaseOrApresentacaoVolumeContainingIgnoreCase(nome, nome, nome);
     }
 
     public List<Produto> buscarPorCategoria(String categoria) {
@@ -70,7 +76,9 @@ public class ProdutoService {
         produto.setAlteradoPorId(usuarioAutenticado.getId());
         produto.setAlteradoEm(Instant.now());
 
-        return produtoRepository.save(produto);
+        Produto salvo = produtoRepository.save(produto);
+        auditoriaRepository.save(new ProdutoAuditoria(salvo, "ALTERACAO", usuarioAutenticado));
+        return salvo;
     }
 
     private void validarProduto(Produto produto) {
@@ -90,10 +98,17 @@ public class ProdutoService {
         if (produto.getEstoque() < 0) {
             throw new IllegalArgumentException("O estoque não pode ser negativo.");
         }
+        if ("BEBIDA".equalsIgnoreCase(produto.getCategoria().trim())
+                && (produto.getApresentacaoVolume() == null
+                || produto.getApresentacaoVolume().isBlank())) {
+            throw new IllegalArgumentException("Informe a apresentação/volume da bebida (ex.: lata 350 ml, 2 L).");
+        }
     }
 
-    public void excluir(String id) {
+    public void excluir(String id, Colaborador usuarioAutenticado) {
         Produto produto = buscarPorId(id);
+        // Grava rastro antes da exclusão: o id e colaborador continuam registrados.
+        auditoriaRepository.save(new ProdutoAuditoria(produto, "EXCLUSAO", usuarioAutenticado));
         produtoRepository.delete(produto);
     }
 }

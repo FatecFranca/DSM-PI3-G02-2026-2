@@ -77,9 +77,11 @@ public class ProdutoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable String id) {
+    public ResponseEntity<Void> excluir(
+            @PathVariable String id,
+            @RequestAttribute("usuarioAutenticado") Colaborador usuarioAutenticado) {
 
-    produtoService.excluir(id);
+    produtoService.excluir(id, usuarioAutenticado);
     return ResponseEntity.noContent().build();
     }
 }

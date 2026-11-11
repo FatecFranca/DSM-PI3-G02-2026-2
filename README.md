@@ -1,4 +1,4 @@
-# City Pizzas — Sprint 2 + início da Sprint 3 (tarefas do João Pedro)
+# City Pizzas — Sprints 2 e 3: catálogo, pedidos e melhorias
 
 Projeto Java 21 + Spring Boot 4.1.1 + MongoDB + HTML/CSS/JavaScript. Esta entrega
 parte do ZIP mais recente enviado pela equipe; não substitui as demais tarefas da Sprint 3.
@@ -17,9 +17,9 @@ parte do ZIP mais recente enviado pela equipe; não substitui as demais tarefas 
 - Os pedidos são gravados na coleção MongoDB `pedidos`, inicialmente
   `EM_ABERTO`. O campo `subtotalItens` **não** é o total final com entrega e
   pagamento, que serão implementados na Sprint 4.
-- A tela protótipo de pedidos continua em desenvolvimento. Por segurança,
-  a impressão é cancelada se a API rejeitar o salvamento; não considerar essa
-  tela como a interface final da Sprint 3.
+- A interface de pedidos busca os preços das pizzas na API e permite a pesquisa
+  de pedidos `EM_ABERTO`. Entrega e pagamento continuam fora da persistência
+  até a Sprint 4.
 
 ## Executar no Windows (PowerShell)
 
@@ -27,8 +27,10 @@ No diretório com `pom.xml`:
 
 ```powershell
 $env:MONGODB_URI = "SUA_URI_MONGODB_ATLAS_OU_LOCAL"
-# Configure o preço-base aprovado pela pizzaria (valor abaixo apenas ilustrativo):
+# Preço da pizza ASSADA (inteira ou meio a meio); valor apenas ilustrativo:
 $env:PIZZA_PRECO_BASE = "59.00"
+# Preço da pizza PRÉ-ASSADA (inteira ou meio a meio); valor apenas ilustrativo:
+$env:PIZZA_PRECO_PRE_ASSADA = "49.00"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -114,9 +116,10 @@ Este é um **endpoint para testar o back-end**, não a tela pronta do Cauã.
    }
    ```
 
-   O primeiro item recebe preparo `ASSADA` automaticamente. Para `meioAMeio:true`,
+   O primeiro item recebe preparo `ASSADA` automaticamente. O preço depende do preparo
+   (`ASSADA` ou `PRE_ASSADA`) mesmo quando `meioAMeio:true`. Para `meioAMeio:true`,
    `segundoProdutoId` é obrigatório e deve ser um sabor diferente. O valor da
-   pizza é buscado da **configuração única do servidor**, nunca do preço do
+   pizza é buscado da **configuração de preparo do servidor**, nunca do preço do
    sabor/JSON. Quantidade é de 1 a 100. IDs precisam existir no MongoDB.
 5. Em caso de sucesso, o servidor retorna `201 Created` com `id`, `clienteId`,
    `colaboradorId` (do token), `colaboradorMatricula`, `criadoEm`, `itens`,
@@ -150,3 +153,48 @@ Teste real de SMTP requer credenciais válidas e teste de persistência exige Mo
 
 Ver `RELATORIO_PB02_SPRINT3_JOAO.md` para a lista de arquivos, critérios de
 validação e responsabilidades conforme o planejamento de sprints.
+
+## Atualização PB07 / PB08 / pesquisa de pedidos em aberto
+
+- Em **Cadastros > Produto**, funcionários logados podem cadastrar, pesquisar,
+  editar e excluir produtos. Para bebidas, a apresentação/volume é obrigatória:
+  registre separadamente, por exemplo, **Coca-Cola lata 350 ml** e
+  **Coca-Cola 2 litros** (mesmo nome, apresentações diferentes).
+- Os campos `criadoPorId` e `alteradoPorId` são preenchidos no servidor pelo token
+  do colaborador autenticado, e as ações de criação/alteração/exclusão são
+  rastreadas na coleção `auditoria_produtos`.
+- Em **Pedidos anteriores**, a parte superior exibe **Pedidos em aberto** consultados
+  diretamente no MongoDB, com busca por ID, nome/telefone do cliente ou matrícula.
+  Os registros de impressão abaixo continuam locais ao navegador.
+- Para preços, configure `PIZZA_PRECO_BASE` (pizza **assada**) e,
+  **opcionalmente**, `PIZZA_PRECO_PRE_ASSADA` (pizza **pré-assada**).
+  O preço é definido pelo **tipo de preparo**, tanto para pizza inteira quanto
+  meio a meio; não faz média nem cobra pela quantidade de sabores (PB14).
+  Se o preço pré-assada não for definido, usa o mesmo valor da assada.
+  **ATENÇÃO:** confirme os dois valores comerciais com o PO/cliente; os PDFs
+  fornecidos não determinam um valor específico para pizza pré-assada.
+- `GET /pedidos/precos` devolve os preços para o frontend; `GET /pedidos/abertos?termo=...`
+  lista e pesquisa os pedidos `EM_ABERTO`. Ambos exigem login válido.
+- No quadrado de visualização de 64×64 px, a pizza inteira usa um X e
+  a meio a meio usa uma diagonal. Outros produtos mantêm o quadrado sem traços.
+- Corrigidos o envio duplicado de pedido no frontend e o subtotal do backend
+  para considerar também os acréscimos de R$ 5,00 por ingrediente.
+
+### Teste manual recomendado
+
+1. Configure o MongoDB, `PIZZA_PRECO_BASE` e, se necessário, `PIZZA_PRECO_PRE_ASSADA`.
+2. Rode `./mvnw spring-boot:run` (ou ` .\mvnw.cmd spring-boot:run` no PowerShell)
+   e abra `frontend/index.html` pelo Live Server (porta 5500).
+3. Faça login como funcionário. Em **Cadastros > Produto**, cadastre uma bebida
+   com apresentação **350 ml**, outra da mesma marca com **2 litros** e pelo menos
+   dois sabores de pizza (categoria **PIZZA**).
+4. No pedido, busque os produtos por nome e volume; confira o X e a diagonal,
+   teste o segundo sabor e alterne Assada/Pré-assada para conferir os preços,
+   independentemente da escolha Inteira/Meio a meio.
+5. Crie um pedido e, em **Pedidos anteriores**, procure por nome ou telefone do cliente.
+6. Confira no MongoDB as coleções `produtos`, `pedidos` e `auditoria_produtos`.
+
+**Situação dos testes nesta entrega:** JavaScript validado com `node --check` e
+as três interfaces exercitadas no Chromium com respostas simuladas da API.
+O backend Spring Boot e os testes JUnit precisam ser executados no ambiente
+local com Maven e MongoDB; o ambiente de edição não conseguiu baixar o Maven.

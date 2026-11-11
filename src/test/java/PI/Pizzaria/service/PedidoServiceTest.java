@@ -41,7 +41,8 @@ class PedidoServiceTest {
                 pedidoRepository,
                 clienteRepository,
                 produtoRepository,
-                "59.00");
+                "59.00",
+                "");
 
         when(clienteRepository.existsById("cliente-1"))
                 .thenReturn(true);
@@ -149,6 +150,64 @@ class PedidoServiceTest {
     }
 
     @Test
+    void configuracaoSeparadaDePreAssadaNaoFazMediaDosSabores() {
+        PedidoService comPrecoPreAssada = new PedidoService(
+                pedidoRepository, clienteRepository, produtoRepository,
+                "59.00", "49.00");
+        ItemPedidoRequest metade = item("pizza-1");
+        metade.setMeioAMeio(true);
+        metade.setSegundoProdutoId("pizza-2");
+        metade.setTipoPreparo(ItemPedido.TipoPreparo.PRE_ASSADA);
+        Pedido preAssadaMeio = comPrecoPreAssada.criar(requisicao(metade), atendente);
+        assertEquals(new BigDecimal("49.00"), preAssadaMeio.getItens().get(0).getPrecoUnitario());
+        assertEquals(new BigDecimal("49.00"), preAssadaMeio.getSubtotalItens());
+
+        ItemPedidoRequest inteira = item("pizza-1");
+        inteira.setTipoPreparo(ItemPedido.TipoPreparo.PRE_ASSADA);
+        Pedido preAssadaInteira = comPrecoPreAssada.criar(requisicao(inteira), atendente);
+        assertEquals(new BigDecimal("49.00"), preAssadaInteira.getSubtotalItens());
+
+        metade.setTipoPreparo(ItemPedido.TipoPreparo.ASSADA);
+        Pedido assadaMeio = comPrecoPreAssada.criar(requisicao(metade), atendente);
+        assertEquals(new BigDecimal("59.00"), assadaMeio.getSubtotalItens());
+        Pedido assadaInteira = comPrecoPreAssada.criar(requisicao(item("pizza-1")), atendente);
+        assertEquals(new BigDecimal("59.00"), assadaInteira.getSubtotalItens());
+        assertEquals(new BigDecimal("59.00"), comPrecoPreAssada.consultarPrecosPizza().get("precoBase"));
+        assertEquals(new BigDecimal("49.00"), comPrecoPreAssada.consultarPrecosPizza().get("precoPreAssada"));
+    }
+
+    @Test
+    void valorDosAcrescimosTambemEntraNoSubtotalComQuantidade() {
+        ItemPedidoRequest metade = item("pizza-1");
+        metade.setQuantidade(2);
+        metade.setAcrescimos(List.of("Catupiry", "Bacon"));
+        Pedido pedido = service.criar(requisicao(metade), atendente);
+        assertEquals(new BigDecimal("69.00"), pedido.getItens().get(0).getPrecoUnitario());
+        assertEquals(new BigDecimal("138.00"), pedido.getSubtotalItens());
+    }
+
+    @Test
+    void pesquisaPedidosAbertosPeloNomeDoCliente() {
+        Pedido pedido = new Pedido();
+        pedido.setId("pedido-1");
+        pedido.setClienteId("cliente-1");
+        pedido.setSituacao("EM_ABERTO");
+        pedido.setColaboradorMatricula("1001");
+        PI.Pizzaria.model.Cliente cliente = new PI.Pizzaria.model.Cliente();
+        cliente.setId("cliente-1");
+        cliente.setNome("Maria Teste");
+        cliente.setTelefone("16999999999");
+        when(pedidoRepository.findBySituacaoOrderByCriadoEmDesc("EM_ABERTO"))
+                .thenReturn(List.of(pedido));
+        when(clienteRepository.findAllById(anyList()))
+                .thenReturn(List.of(cliente));
+
+        assertEquals(1, service.pesquisarPedidosAbertos("maria").size());
+        assertEquals(1, service.pesquisarPedidosAbertos("1001").size());
+        assertEquals(0, service.pesquisarPedidosAbertos("outra pessoa").size());
+    }
+
+    @Test
     void rejeitaMeioAMeioSemSegundoSabor() {
 
         ItemPedidoRequest item = item("pizza-1");
@@ -228,6 +287,7 @@ class PedidoServiceTest {
                         pedidoRepository,
                         clienteRepository,
                         produtoRepository,
+                        "",
                         "");
 
         assertThrows(

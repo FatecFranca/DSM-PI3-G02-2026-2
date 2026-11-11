@@ -1,6 +1,10 @@
 package PI.Pizzaria.controller;
 
 import java.util.List;
+import java.util.Map;
+import java.math.BigDecimal;
+import org.springframework.web.bind.annotation.RequestParam;
+import PI.Pizzaria.dto.PedidoAbertoResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +33,17 @@ public class PedidoController {
     public ResponseEntity<Pedido> criar(@RequestBody PedidoRequest dados,
                                         @RequestAttribute("usuarioAutenticado") Colaborador usuario) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.criar(dados, usuario));
+    }
+
+    @GetMapping("/abertos")
+    public ResponseEntity<List<PedidoAbertoResponse>> buscarAbertos(
+            @RequestParam(defaultValue = "") String termo) {
+        return ResponseEntity.ok(pedidoService.pesquisarPedidosAbertos(termo));
+    }
+
+    @GetMapping("/precos")
+    public ResponseEntity<Map<String, BigDecimal>> consultarPrecos() {
+        return ResponseEntity.ok(pedidoService.consultarPrecosPizza());
     }
 
     @GetMapping("/{id}")

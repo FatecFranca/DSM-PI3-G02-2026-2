@@ -5,6 +5,13 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
+import PI.Pizzaria.dto.PedidoAbertoResponse;
+import PI.Pizzaria.model.Cliente;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -28,6 +35,7 @@ public class PedidoService {
     private final ClienteRepository clienteRepository;
     private final ProdutoRepository produtoRepository;
     private final String precoBaseConfigurado;
+    private final String precoPreAssadaConfigurado;
     private static final BigDecimal PRECO_POR_ACRESCIMO =
         new BigDecimal("5.00");
 
@@ -35,12 +43,14 @@ public class PedidoService {
             PedidoRepository pedidoRepository,
             ClienteRepository clienteRepository,
             ProdutoRepository produtoRepository,
-            @Value("${app.pizza.preco-base:}") String precoBaseConfigurado) {
+            @Value("${app.pizza.preco-base:}") String precoBaseConfigurado,
+            @Value("${app.pizza.preco-pre-assada:}") String precoPreAssadaConfigurado) {
 
         this.pedidoRepository = pedidoRepository;
         this.clienteRepository = clienteRepository;
         this.produtoRepository = produtoRepository;
         this.precoBaseConfigurado = precoBaseConfigurado;
+        this.precoPreAssadaConfigurado = precoPreAssadaConfigurado;
     }
 
     public Pedido criar(PedidoRequest dados, Colaborador atendente) {
@@ -219,7 +229,11 @@ public class PedidoService {
         BigDecimal precoUnitario;
 
         if (pizza) {
-            precoUnitario = obterPrecoBasePizza();
+            // O preço depende do preparo (assada ou pré-assada),
+            // nunca da quantidade de sabores (inteira ou meio a meio).
+            precoUnitario = item.getTipoPreparo() == ItemPedido.TipoPreparo.PRE_ASSADA
+                    ? obterPrecoPreAssada()
+                    : obterPrecoBasePizza();
         } else {
 
             if (primeiro.getPreco() == null) {
@@ -232,14 +246,9 @@ public class PedidoService {
 
         item.setPrecoUnitario(precoUnitario);
 
-        /*
-         * Persistimos observações e acréscimos.
-         * A regra financeira dos R$ 5,00 será tratada
-         * na implementação responsável por essa regra.
-         */
+        // Persistimos observações e acréscimos; cada ingrediente extra custa R$ 5,00.
         item.setObservacao(dados.getObservacao());
 
-        // item.setAcrescimos(dados.getAcrescimos());
         List<String> acrescimos =
         normalizarIngredientes(dados.getAcrescimos(), "acréscimos");
 
@@ -265,7 +274,7 @@ public class PedidoService {
         // Subtotal considera também a quantidade.
 
         item.setSubtotal(
-                precoUnitario.multiply(
+                precoFinalUnitario.multiply(
                         BigDecimal.valueOf(quantidade)));
 
         return item;
@@ -311,36 +320,65 @@ public class PedidoService {
     }
 
     private BigDecimal obterPrecoBasePizza() {
+        return lerPrecoConfigurado(precoBaseConfigurado, "Preço-base das pizzas");
+    }
 
-        if (precoBaseConfigurado == null
-                || precoBaseConfigurado.isBlank()) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "Preço-base das pizzas ainda não configurado pela pizzaria.");
+    private BigDecimal obterPrecoPreAssada() {
+        // Padrão compatível: sem preço específico, mantém o preço-base.
+        if (precoPreAssadaConfigurado == null || precoPreAssadaConfigurado.isBlank()) {
+            return obterPrecoBasePizza();
         }
+        return lerPrecoConfigurado(precoPreAssadaConfigurado, "Preço das pizzas pré-assadas");
+    }
 
+    /** Preços oficiais da API, definidos pelo preparo e não pelo número de sabores. */
+    public Map<String, BigDecimal> consultarPrecosPizza() {
+        return Map.of(
+                "precoBase", obterPrecoBasePizza(),
+                "precoPreAssada", obterPrecoPreAssada());
+    }
+
+    private BigDecimal lerPrecoConfigurado(String configuracao, String descricao) {
+        if (configuracao == null || configuracao.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    descricao + " ainda não configurado pela pizzaria.");
+        }
         try {
-
-            BigDecimal valor =
-                    new BigDecimal(precoBaseConfigurado.trim())
-                            .setScale(
-                                    2,
-                                    RoundingMode.UNNECESSARY);
-
-            if (valor.signum() <= 0) {
-                throw new NumberFormatException(
-                        "Preço-base não positivo");
-            }
-
-            return valor;
-
-        } catch (NumberFormatException | ArithmeticException e) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "Preço-base das pizzas inválido. Configure um valor positivo com até duas casas decimais.");
+            BigDecimal preco = new BigDecimal(configuracao.trim())
+                    .setScale(2, RoundingMode.UNNECESSARY);
+            if (preco.signum() <= 0) throw new NumberFormatException("Preço não positivo");
+            return preco;
+        } catch (NumberFormatException | ArithmeticException erro) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    descricao + " inválido. Configure um valor positivo com até duas casas decimais.");
         }
+    }
+
+    /** Pedidos abertos, com dados do cliente, pesquisáveis por id, nome, telefone ou matrícula. */
+    public List<PedidoAbertoResponse> pesquisarPedidosAbertos(String termo) {
+        List<Pedido> abertos = pedidoRepository.findBySituacaoOrderByCriadoEmDesc("EM_ABERTO");
+        Map<String, Cliente> clientesPorId = new HashMap<>();
+        List<String> ids = abertos.stream().map(Pedido::getClienteId)
+                .filter(id -> id != null && !id.isBlank()).distinct().toList();
+        clienteRepository.findAllById(ids).forEach(c -> clientesPorId.put(c.getId(), c));
+
+        String consulta = termo == null ? "" : termo.strip().toLowerCase(Locale.ROOT);
+        return abertos.stream().map(pedido -> {
+            Cliente cliente = clientesPorId.get(pedido.getClienteId());
+            return new PedidoAbertoResponse(pedido,
+                    cliente != null ? cliente.getNome() : "Cliente não encontrado",
+                    cliente != null ? cliente.getTelefone() : "");
+        }).filter(resumo -> consulta.isEmpty()
+                || contem(resumo.pedido().getId(), consulta)
+                || contem(resumo.pedido().getClienteId(), consulta)
+                || contem(resumo.pedido().getColaboradorMatricula(), consulta)
+                || contem(resumo.clienteNome(), consulta)
+                || contem(resumo.clienteTelefone(), consulta))
+                .collect(Collectors.toList());
+    }
+
+    private boolean contem(String valor, String termo) {
+        return valor != null && valor.toLowerCase(Locale.ROOT).contains(termo);
     }
 
     public List<Pedido> listarTodos() {

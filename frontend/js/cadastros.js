@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarSaida();
   configurarBuscaClientes();
   configurarCadastroColaborador();
+  configurarCadastroProdutos();
   configurarAbas();
   configurarFormularioCliente();
   configurarConsultaCep();
@@ -71,7 +72,6 @@ function configurarFormularioCliente() {
       telefone: somenteDigitos(campos.telefone.value),
       cpf: somenteDigitos(campos.cpf.value),
       email: campos.email.value.trim() || undefined,
-      dataNascimento: campos.dataNascimento.value || undefined, 
       dataNascimento: campos.dataNascimento.value || undefined, // yyyy-MM-dd (LocalDate)
       endereco: montarEndereco(),
     };
@@ -275,7 +275,6 @@ function configurarCadastroColaborador() {
 function configurarSaida() {
   document.getElementById('linkSairCadastro').addEventListener('click', async (evento) => {
     evento.preventDefault();
-    try { await encerrarSessaoNoServidor(); } catch (_) {}
     try { await encerrarSessaoNoServidor(); } catch (_) { /* rede indisponível */ }
     localStorageEncerrarSessao();
     window.location.href = 'index.html';

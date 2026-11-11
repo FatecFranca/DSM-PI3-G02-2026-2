@@ -18,15 +18,22 @@
   </header>
 
   <main class="pedido">
-    <h1 style="margin-bottom:4px;">Pedidos anteriores</h1>
-    <p style="color:#4A4A4A; font-size:0.9rem; margin-top:0;">
-      Guardado só neste navegador, temporariamente — quando o back-end tiver um endpoint de listagem de pedidos, isso passa a vir de lá.
-    </p>
+    <h1 style="margin-bottom:4px;">Pedidos em aberto</h1>
+    <p class="pedido__aviso">Consulte pedidos registrados no servidor, buscando por número/ID, cliente, telefone ou matrícula do atendente.</p>
+    <form id="formBuscarPedidosAbertos" class="campo" autocomplete="off">
+      <label for="termoPedidoAberto">Pesquisar pedidos em aberto</label>
+      <div class="cadastro__busca">
+        <input type="search" id="termoPedidoAberto" placeholder="Cliente, telefone, ID do pedido ou matrícula" />
+        <button type="submit" class="botao botao--preto">Pesquisar</button>
+      </div>
+    </form>
+    <p id="avisoPedidosAbertos" class="pedido__aviso" role="status" aria-live="polite"></p>
+    <div id="listaPedidosAbertos" style="display:flex; flex-direction:column; gap:16px;"></div>
 
-    <div id="listaVazia" class="pedido__vazio" style="display:none;">
-      Nenhum pedido registrado neste navegador ainda.
-    </div>
-
+    <hr style="margin:32px 0" />
+    <h2>Pedidos impressos neste navegador</h2>
+    <p class="pedido__aviso">Registro local para consulta da impressão. Entrega e pagamento ainda não ficam persistidos na API nesta etapa (Sprint 4).</p>
+    <div id="listaVazia" class="pedido__vazio" style="display:none;">Nenhuma impressão registrada neste navegador.</div>
     <div id="listaPedidos" style="display:flex; flex-direction:column; gap:16px;"></div>
   </main>
 

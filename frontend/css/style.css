@@ -421,9 +421,21 @@ button {
   height: 64px;
   border: 1px solid var(--preto);
   border-radius: 4px;
-  background: repeating-linear-gradient(45deg, transparent, transparent 27px, var(--preto) 27px, var(--preto) 28px),
-              repeating-linear-gradient(-45deg, transparent, transparent 27px, var(--preto) 27px, var(--preto) 28px);
+  /* Um único X centralizado; mantém o quadrado de 64 × 64 px. */
+  background: linear-gradient(45deg, transparent calc(50% - 0.8px), var(--preto) 50%, transparent calc(50% + 0.8px)),
+              linear-gradient(-45deg, transparent calc(50% - 0.8px), var(--preto) 50%, transparent calc(50% + 0.8px));
   background-color: #FFF;
+}
+
+/* Para pizza meio a meio, apenas uma diagonal. */
+.item-pedido__imagem--meio {
+  background: linear-gradient(45deg, transparent calc(50% - 0.8px), var(--preto) 50%, transparent calc(50% + 0.8px));
+  background-color: #FFF;
+}
+
+/* Outros produtos continuam com o mesmo quadrado, sem marcação de pizza. */
+.item-pedido__imagem--produto {
+  background: #FFF;
 }
 
 .item-pedido__info h3 {
@@ -754,4 +766,17 @@ button {
 @media print {
   .cabecalho, .busca-produto, .pedido__acoes-base, .pedido__acoes-topo, .item-pedido__remover,
   .quantidade__botao, .acrescimo__adicionar, .acrescimo__remover, .pedido__aviso, #botaoTrocarCliente { display: none !important; }
+}
+
+/* PB07/PB08: mesmo estilo das demais abas de cadastro. */
+.cadastro__botoes-produto { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+.cadastro__resultado-produto { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--cinza-borda); }
+.cadastro__resultado-produto p { margin:3px 0; font-size:0.8rem; color:var(--cinza-texto); }
+.cadastro__acoes-produto { display:flex; flex-wrap:wrap; gap:8px; }
+#mensagemProduto { display:none; margin-bottom:16px; }
+.pedido-aberto__itens { margin:6px 0; padding-left:18px; font-size:0.85rem; }
+.pedido-aberto__meta { font-size:0.85rem; color:var(--cinza-texto); }
+@media (max-width: 480px) {
+  .cadastro__resultado-produto { flex-direction:column; align-items:stretch; }
+  .cadastro__acoes-produto .botao { flex:1; }
 }
