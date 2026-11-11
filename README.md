@@ -198,3 +198,8 @@ validação e responsabilidades conforme o planejamento de sprints.
 as três interfaces exercitadas no Chromium com respostas simuladas da API.
 O backend Spring Boot e os testes JUnit precisam ser executados no ambiente
 local com Maven e MongoDB; o ambiente de edição não conseguiu baixar o Maven.
+
+
+## Reintegração Sprint 4
+
+Consulte [ALTERACOES_INTEGRADAS_SPRINT4.md](ALTERACOES_INTEGRADAS_SPRINT4.md) para o escopo, as rotas, as variáveis necessárias e o roteiro de validação. Os preços da pizza foram preservados da versão-base.

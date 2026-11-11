@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   if (usuarioEstaLogado()) {
-    window.location.href = 'cadastros.html';
+    window.location.href = 'pedidos.html';
     return;
   }
 
@@ -15,6 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const botaoEntrar = document.getElementById('botaoEntrar');
 
   /* ---------- Login ---------- */
+
+  // Enter na matrícula avança para a senha; Enter na senha envia o formulário.
+  // Evita que o Enter no primeiro campo tente fazer login prematuramente.
+  campoUsuario.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Enter' && !evento.isComposing) {
+      evento.preventDefault();
+      campoSenha.focus();
+    }
+  });
 
   formLogin.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -45,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       localStorageSalvarSessao(resultado);
-      window.location.href = 'cadastros.html';
+      window.location.href = 'pedidos.html';
     } catch (erro) {
       mostrarErro(erro.message || 'Matrícula ou senha incorreta.');
     } finally {

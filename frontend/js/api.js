@@ -182,8 +182,34 @@ function pesquisarPedidosAbertos(termo = '') {
   return requisitar(`/pedidos/abertos?termo=${encodeURIComponent(termo.trim())}`, { method: 'GET' });
 }
 
+function pesquisarPedidosFinalizados(termo = '') {
+  return requisitar(`/pedidos/finalizados?termo=${encodeURIComponent(termo.trim())}`, { method: 'GET' });
+}
+
 function consultarPrecosPizza() {
   return requisitar('/pedidos/precos', { method: 'GET' });
+}
+
+function buscarPedidoPorId(pedidoId) {
+  return requisitar(`/pedidos/${encodeURIComponent(pedidoId)}`, { method: 'GET' });
+}
+
+function buscarClientePorId(clienteId) {
+  return requisitar(`/clientes/${encodeURIComponent(clienteId)}`, { method: 'GET' });
+}
+
+function atualizarPedido(pedidoId, dadosPedido) {
+  return requisitar(`/pedidos/${encodeURIComponent(pedidoId)}`, {
+    method: 'PUT', body: JSON.stringify(dadosPedido),
+  });
+}
+
+function finalizarPedido(pedidoId) {
+  return requisitar(`/pedidos/${encodeURIComponent(pedidoId)}/finalizar`, { method: 'POST' });
+}
+
+function consultarTaxaEntrega() {
+  return requisitar('/pedidos/taxa-entrega', { method: 'GET' });
 }
 
 function cancelarPedido(pedidoId) {

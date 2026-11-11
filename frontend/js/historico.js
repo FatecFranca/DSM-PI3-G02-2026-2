@@ -9,7 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     evento.preventDefault();
     carregarPedidosAbertos(document.getElementById('termoPedidoAberto').value);
   });
+  document.getElementById('formBuscarFinalizados').addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    carregarPedidosFinalizados(document.getElementById('termoFinalizados').value);
+  });
   carregarPedidosAbertos('');
+  carregarPedidosFinalizados('');
   carregarHistoricoLocal();
 });
 
@@ -60,13 +65,52 @@ async function carregarPedidosAbertos(termo) {
         const nome = item.meioAMeio ? `½ ${primeiro}${segundo}` : primeiro;
         itens.appendChild(novoElemento('li', `${item.quantidade || 1} × ${nome} — ${formatarMoeda(item.subtotal)}`));
       });
-      const subtotal = novoElemento('p', `Subtotal dos itens: ${formatarMoeda(p.subtotalItens)}`);
+      const subtotal = novoElemento('p', `Subtotal: ${formatarMoeda(p.subtotalItens)} · Taxa: ${formatarMoeda(p.taxaEntrega)} · Total: ${p.total == null ? 'pendente de atualização' : formatarMoeda(p.total)}`);
       subtotal.style.fontWeight = '700';
-      cartao.append(titulo, meta, dados, itens, subtotal);
+      const reabrir = novoElemento('a', 'Abrir pedido para editar / finalizar', 'botao botao--preto');
+      reabrir.href = `pedidos.html?pedido=${encodeURIComponent(p.id)}`;
+      reabrir.style.cssText = 'display:inline-block; margin-top:12px; text-decoration:none;';
+      cartao.append(titulo, meta, dados, itens, subtotal, reabrir);
       destino.appendChild(cartao);
     });
   } catch (erro) {
     aviso.textContent = `Não foi possível consultar pedidos: ${erro.message}`;
+    if (erro.status === 401) {
+      localStorageEncerrarSessao();
+      window.location.href = 'index.html';
+    }
+  }
+}
+
+async function carregarPedidosFinalizados(termo) {
+  const destino = document.getElementById('listaFinalizados');
+  const aviso = document.getElementById('avisoFinalizados');
+  destino.replaceChildren();
+  aviso.textContent = 'Consultando histórico no servidor...';
+  try {
+    const resultados = await pesquisarPedidosFinalizados(termo);
+    aviso.textContent = resultados.length
+      ? `${resultados.length} pedido(s) finalizado(s).`
+      : 'Nenhum pedido finalizado encontrado.';
+    resultados.forEach(({pedido, clienteNome, clienteTelefone}) => {
+      const cartao = montarCartao();
+      const itens = novoElemento('ul', null, 'pedido-aberto__itens');
+      (pedido.itens || []).forEach(item => {
+        const nome = item.meioAMeio ? `${item.nomeProduto} + ${item.segundoSabor}` : item.nomeProduto;
+        itens.appendChild(novoElemento('li', `${item.quantidade || 1} × ${nome || 'Produto'} — ${formatarMoeda(item.subtotal)}`));
+      });
+      cartao.append(
+        novoElemento('strong', `Pedido ${pedido.id}`),
+        novoElemento('p', `Finalizado em: ${formatarData(pedido.finalizadoEm)}`, 'pedido-aberto__meta'),
+        novoElemento('p', `Cliente: ${clienteNome} · ${formatarTelefone(pedido.telefoneContato || clienteTelefone)}`),
+        novoElemento('p', `Modalidade: ${pedido.modalidade === 'RETIRADA' ? 'Retirada' : 'Entrega'} · Pagamento: ${pedido.formaPagamento || '—'}`),
+        itens,
+        novoElemento('p', `Total: ${formatarMoeda(pedido.total)}`)
+      );
+      destino.appendChild(cartao);
+    });
+  } catch (erro) {
+    aviso.textContent = `Não foi possível consultar finalizados: ${erro.message}`;
     if (erro.status === 401) {
       localStorageEncerrarSessao();
       window.location.href = 'index.html';

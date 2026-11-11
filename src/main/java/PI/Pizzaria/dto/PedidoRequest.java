@@ -17,6 +17,9 @@ public class PedidoRequest {
     private String modalidade;
     private Endereco enderecoEntrega;
     private String formaPagamento;
+    private String telefoneContato;
+    private String nomeRetirada;
+    private String observacaoGeral;
 
     public String getClienteId() { return clienteId; }
     public void setClienteId(String clienteId) { this.clienteId = clienteId; }
@@ -32,6 +35,13 @@ public class PedidoRequest {
 
     public String getFormaPagamento() { return formaPagamento; }
     public void setFormaPagamento(String formaPagamento) { this.formaPagamento = formaPagamento; }
+
+    public String getTelefoneContato() { return telefoneContato; }
+    public void setTelefoneContato(String telefoneContato) { this.telefoneContato = telefoneContato; }
+    public String getNomeRetirada() { return nomeRetirada; }
+    public void setNomeRetirada(String nomeRetirada) { this.nomeRetirada = nomeRetirada; }
+    public String getObservacaoGeral() { return observacaoGeral; }
+    public void setObservacaoGeral(String observacaoGeral) { this.observacaoGeral = observacaoGeral; }
 
     @JsonAnySetter
     public void campoNaoSuportado(String nome, Object valor) {

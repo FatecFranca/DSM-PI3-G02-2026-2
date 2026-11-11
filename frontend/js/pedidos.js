@@ -3,6 +3,8 @@ let itensPedido = [];
 let proximoUid = 1;
 let catalogoProdutos = [];
 let enviandoPedido = false;
+let pedidoEmEdicaoId = null;
+let taxaEntrega = null;
 let precosPizza = { precoBase: null, precoPreAssada: null };
 
 const VALOR_ACRESCIMO = 5.0;
@@ -32,10 +34,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   await carregarPrecosPizza();
   await configurarBuscaProduto();
   configurarModalidade();
+  await carregarTaxaEntrega();
+  await abrirPedidoDaUrl();
 
   document.getElementById('botaoNovoPedido').addEventListener('click', reiniciarPedido);
   document.getElementById('botaoCancelar').addEventListener('click', cancelarPedidoAtual);
-  document.getElementById('botaoImprimir').addEventListener('click', finalizarEImprimir);
+  document.getElementById('botaoImprimir').addEventListener('click', abrirPopupDeFinalizacao);
+  document.getElementById('botaoSalvarAberto').addEventListener('click', salvarComoAberto);
 
   renderizarItens();
 });
@@ -91,8 +96,7 @@ function configurarBuscaCliente() {
       botao.type = 'button';
       botao.textContent = `${cliente.nome} — ${formatarTelefone(cliente.telefone)}`;
       botao.addEventListener('click', () => {
-        clienteSelecionado = cliente;
-        document.getElementById('nomeCliente').textContent = clienteSelecionado.nome;
+        selecionarCliente(cliente);
         resultados.style.display = 'none';
         painel.style.display = 'none';
         campo.value = '';
@@ -109,10 +113,98 @@ function restaurarClienteRecemCadastrado() {
   if (!bruto) return;
   sessionStorage.removeItem('cityPizzas_clienteSelecionado');
   try {
-    clienteSelecionado = JSON.parse(bruto);
-    document.getElementById('nomeCliente').textContent = clienteSelecionado.nome;
+    selecionarCliente(JSON.parse(bruto));
   } catch (_) {
     clienteSelecionado = null;
+  }
+}
+
+/** Preenche somente ao selecionar; os campos seguem livres para edição no pedido. */
+function selecionarCliente(cliente) {
+  clienteSelecionado = cliente;
+  document.getElementById('nomeCliente').textContent = cliente?.nome || 'Cliente não selecionado';
+  document.getElementById('telefoneContato').value = formatarTelefone(cliente?.telefone || '');
+  document.getElementById('retiradaNome').value = cliente?.nome || '';
+  preencherEndereco(cliente?.endereco || {});
+}
+
+const CAMPOS_ENDERECO = {
+  rua: 'endRua', numero: 'endNumero', bairro: 'endBairro',
+  cidade: 'endCidade', cep: 'endCep', complemento: 'endComplemento',
+};
+
+function preencherEndereco(endereco = {}) {
+  Object.entries(CAMPOS_ENDERECO).forEach(([chave, id]) => {
+    document.getElementById(id).value = endereco?.[chave] || '';
+  });
+}
+
+function lerEndereco() {
+  const endereco = {};
+  Object.entries(CAMPOS_ENDERECO).forEach(([chave, id]) => {
+    endereco[chave] = document.getElementById(id).value.trim();
+  });
+  return endereco;
+}
+
+async function carregarTaxaEntrega() {
+  try {
+    const dados = await consultarTaxaEntrega();
+    taxaEntrega = dados.taxaEntrega === null || dados.taxaEntrega === undefined
+      ? null : Number(dados.taxaEntrega);
+    if (taxaEntrega !== null && (!Number.isFinite(taxaEntrega) || taxaEntrega < 0)) {
+      taxaEntrega = null;
+    }
+  } catch (erro) {
+    taxaEntrega = null;
+    mostrarErro(`Taxa de entrega indisponível: ${erro.message}`);
+  }
+  atualizarTotal();
+}
+
+async function abrirPedidoDaUrl(id = new URLSearchParams(window.location.search).get('pedido')) {
+  if (!id) return;
+  try {
+    const pedido = await buscarPedidoPorId(id);
+    if (pedido.situacao !== 'EM_ABERTO') {
+      mostrarErro('Este pedido já foi finalizado e não pode ser reaberto.');
+      return;
+    }
+    const cliente = await buscarClientePorId(pedido.clienteId);
+    selecionarCliente(cliente);
+    pedidoEmEdicaoId = pedido.id;
+    document.getElementById('numeroPedido').textContent = `pedido ${pedido.id}`;
+    itensPedido = (pedido.itens || []).map((salvo) => {
+      const produto = catalogoProdutos.find((p) => String(p.id) === String(salvo.produtoId));
+      const segundoProduto = salvo.segundoProdutoId
+        ? catalogoProdutos.find((p) => String(p.id) === String(salvo.segundoProdutoId))
+        : null;
+      if (!produto || (salvo.meioAMeio && !segundoProduto)) {
+        throw new Error(`Um produto do pedido (${salvo.nomeProduto || salvo.produtoId}) não existe mais no catálogo. Não altere este pedido até revisar o catálogo.`);
+      }
+      return {
+        uid: proximoUid++, produto, segundoProduto: segundoProduto || null,
+        meioAMeio: Boolean(salvo.meioAMeio), quantidade: salvo.quantidade || 1,
+        tipoPreparo: salvo.tipoPreparo || 'ASSADA', observacao: salvo.observacao || '',
+        acrescimos: Array.isArray(salvo.acrescimos) ? [...salvo.acrescimos] : [],
+        ingredientesRemovidos: Array.isArray(salvo.ingredientesRemovidos) ? [...salvo.ingredientesRemovidos] : [],
+      };
+    });
+    if (pedido.telefoneContato) document.getElementById('telefoneContato').value = formatarTelefone(pedido.telefoneContato);
+    document.getElementById('selectModalidade').value = pedido.modalidade || 'ENTREGA';
+    if (pedido.enderecoEntrega) preencherEndereco(pedido.enderecoEntrega);
+    document.getElementById('retiradaNome').value = pedido.nomeRetirada || cliente.nome || '';
+    document.getElementById('selectPagamento').value = pedido.formaPagamento || 'DINHEIRO';
+    document.getElementById('observacaoGeral').value = pedido.observacaoGeral || '';
+    atualizarCamposModalidade();
+    renderizarItens();
+    mostrarSucesso(`Pedido ${pedido.id} reaberto para edição. Salve as alterações ou finalize quando estiver pronto.`);
+  } catch (erro) {
+    mostrarErro(`Não foi possível reabrir o pedido: ${erro.message}`);
+    pedidoEmEdicaoId = null;
+    itensPedido = [];
+    atualizarNumeroPedido();
+    renderizarItens();
   }
 }
 
@@ -247,6 +339,7 @@ function adicionarItem(produto) {
     tipoPreparo: 'ASSADA',
     observacao: '',
     acrescimos: [],
+    ingredientesRemovidos: [],
   });
   esconderMensagens();
   renderizarItens();
@@ -553,65 +646,101 @@ function criarAcrescimos(item) {
   );
 }
 
-/* ---------- Modalidade (apenas visual até a Sprint 4) ---------- */
+/* ---------- Modalidade e total (Sprint 4) ---------- */
 
 function configurarModalidade() {
-  const select = document.getElementById('selectModalidade');
-  const camposEntrega = document.getElementById('camposEntrega');
-  const camposRetirada = document.getElementById('camposRetirada');
-
-  select.addEventListener('change', () => {
-    const ehEntrega = select.value === 'ENTREGA';
-    camposEntrega.style.display = ehEntrega ? 'grid' : 'none';
-    camposRetirada.style.display = ehEntrega ? 'none' : 'grid';
+  document.getElementById('selectModalidade').addEventListener('change', atualizarCamposModalidade);
+  const cep = document.getElementById('endCep');
+  cep.addEventListener('blur', async () => {
+    const digitado = somenteDigitos(cep.value);
+    if (!digitado) return;
+    if (digitado.length !== 8) {
+      mostrarErro('O CEP deve conter 8 dígitos. Você também pode preencher o endereço manualmente.');
+      return;
+    }
+    const endereco = await consultarCep(digitado);
+    // Se a consulta falhar, todos os campos podem continuar sendo preenchidos manualmente.
+    if (!endereco || somenteDigitos(cep.value) !== digitado) return;
+    [['endRua', endereco.rua], ['endBairro', endereco.bairro], ['endCidade', endereco.cidade]]
+      .forEach(([id, valor]) => { if (valor) document.getElementById(id).value = valor; });
   });
+  atualizarCamposModalidade();
 }
 
-/* ---------- Total ---------- */
+function atualizarCamposModalidade() {
+  const entrega = document.getElementById('selectModalidade').value === 'ENTREGA';
+  document.getElementById('camposEntrega').style.display = entrega ? 'grid' : 'none';
+  document.getElementById('camposRetirada').style.display = entrega ? 'none' : 'grid';
+  atualizarTotal();
+}
 
-function calcularTotal() {
+function calcularSubtotal() {
   return itensPedido.reduce((soma, item) => soma + subtotalItem(item), 0);
 }
 
+function calcularTotal() {
+  const subtotal = calcularSubtotal();
+  return subtotal + (document.getElementById('selectModalidade').value === 'ENTREGA' ? (taxaEntrega || 0) : 0);
+}
+
 function atualizarTotal() {
-  const total = calcularTotal();
-  document.getElementById('valorTotal').textContent = formatarMoeda(total);
-  return total;
+  const entrega = document.getElementById('selectModalidade').value === 'ENTREGA';
+  const subtotal = calcularSubtotal();
+  document.getElementById('valorSubtotal').textContent = formatarMoeda(subtotal);
+  const taxaTexto = entrega && taxaEntrega === null ? 'A configurar' : formatarMoeda(entrega ? taxaEntrega : 0);
+  document.getElementById('valorTaxaEntrega').textContent = `Taxa: ${taxaTexto}`;
+  document.getElementById('valorTaxaResumo').textContent = taxaTexto;
+  document.getElementById('valorTotal').textContent = entrega && taxaEntrega === null
+    ? 'A configurar' : formatarMoeda(calcularTotal());
+  return calcularTotal();
 }
 
 /* ---------- Ações: novo / cancelar / imprimir ---------- */
 
 function reiniciarPedido() {
+  pedidoEmEdicaoId = null;
   clienteSelecionado = null;
   itensPedido = [];
+  proximoUid = 1;
   document.getElementById('nomeCliente').textContent = 'Cliente não selecionado';
+  document.getElementById('telefoneContato').value = '';
+  document.getElementById('retiradaNome').value = '';
+  preencherEndereco({});
   atualizarNumeroPedido();
   document.getElementById('observacaoGeral').value = '';
+  document.getElementById('selectPagamento').value = 'DINHEIRO';
   document.getElementById('selectModalidade').value = 'ENTREGA';
-  document.getElementById('camposEntrega').style.display = 'grid';
-  document.getElementById('camposRetirada').style.display = 'none';
+  atualizarCamposModalidade();
+  window.history.replaceState({}, '', 'pedidos.html');
   esconderMensagens();
   renderizarItens();
 }
 
 function cancelarPedidoAtual() {
   if (itensPedido.length === 0 && !clienteSelecionado) return;
-  if (confirm('Cancelar este pedido? Os itens adicionados serão perdidos.')) {
-    reiniciarPedido();
-  }
+  if (confirm(pedidoEmEdicaoId
+    ? 'Descartar alterações desta tela? O pedido salvo no servidor continuará em aberto.'
+    : 'Descartar os itens deste pedido ainda não salvo?')) reiniciarPedido();
 }
 
 function validarPedido() {
-  if (!clienteSelecionado) return 'Selecione um cliente antes de finalizar o pedido.';
+  if (!clienteSelecionado) return 'Selecione um cliente antes de salvar o pedido.';
   if (itensPedido.length === 0) return 'Adicione pelo menos um item ao pedido.';
-
+  const telefone = somenteDigitos(document.getElementById('telefoneContato').value);
+  if (!/^\d{10,11}$/.test(telefone)) return 'Informe um telefone de contato com DDD (10 ou 11 dígitos).';
+  if (document.getElementById('selectModalidade').value === 'ENTREGA') {
+    if (taxaEntrega === null) return 'A taxa de entrega ainda não foi configurada. Defina TAXA_ENTREGA no backend.';
+    const end = lerEndereco();
+    if (!end.rua || !end.numero || !end.bairro || !end.cidade) return 'Para entrega, informe rua, número, bairro e cidade.';
+    if (end.cep && somenteDigitos(end.cep).length !== 8) return 'Informe um CEP válido ou deixe o campo vazio.';
+  }
   for (const item of itensPedido) {
     const nome = nomeExibicaoProduto(item.produto);
     if (!Number.isInteger(item.quantidade) || item.quantidade < QUANTIDADE_MIN || item.quantidade > QUANTIDADE_MAX) {
       return `Quantidade inválida em "${nome}": use um valor de ${QUANTIDADE_MIN} a ${QUANTIDADE_MAX}.`;
     }
     if (ehPizza(item.produto) && valorUnitarioItem(item) == null) {
-      return 'O preço da pizza não está configurado no servidor. Configure PIZZA_PRECO_BASE (e, se necessário, PIZZA_PRECO_PRE_ASSADA).';
+      return 'O preço da pizza não está configurado. Defina PIZZA_PRECO_BASE e, se necessário, PIZZA_PRECO_PRE_ASSADA.';
     }
     if (item.meioAMeio && !item.segundoProduto) {
       document.querySelector(`.item-pedido[data-uid="${item.uid}"] select[aria-label="Segundo sabor"]`)?.classList.add('campo-invalido');
@@ -622,8 +751,15 @@ function validarPedido() {
 }
 
 function montarPayloadPedido() {
+  const modalidade = document.getElementById('selectModalidade').value;
   return {
     clienteId: clienteSelecionado.id,
+    modalidade,
+    enderecoEntrega: modalidade === 'ENTREGA' ? lerEndereco() : null,
+    telefoneContato: somenteDigitos(document.getElementById('telefoneContato').value),
+    nomeRetirada: modalidade === 'RETIRADA' ? document.getElementById('retiradaNome').value.trim() : null,
+    formaPagamento: document.getElementById('selectPagamento').value,
+    observacaoGeral: document.getElementById('observacaoGeral').value.trim(),
     itens: itensPedido.map((item) => {
       const pizza = ehPizza(item.produto);
       const dto = {
@@ -636,90 +772,172 @@ function montarPayloadPedido() {
       const observacao = item.observacao.trim();
       if (observacao) dto.observacao = observacao;
       if (pizza && item.acrescimos.length) dto.acrescimos = [...item.acrescimos];
+      if (item.ingredientesRemovidos?.length) dto.ingredientesRemovidos = [...item.ingredientesRemovidos];
       return dto;
     }),
   };
 }
 
-async function finalizarEImprimir() {
+async function persistirPedidoAtual() {
+  if (enviandoPedido) return null;
+  esconderMensagens();
+  const problema = validarPedido();
+  if (problema) { mostrarErro(problema); return null; }
+  enviandoPedido = true;
+  document.querySelectorAll('#botaoSalvarAberto, #botaoImprimir').forEach((b) => b.disabled = true);
+  try {
+    const resultado = pedidoEmEdicaoId
+      ? await atualizarPedido(pedidoEmEdicaoId, montarPayloadPedido())
+      : await criarPedido(montarPayloadPedido());
+    pedidoEmEdicaoId = resultado.id;
+    document.getElementById('numeroPedido').textContent = `pedido ${resultado.id}`;
+    window.history.replaceState({}, '', `pedidos.html?pedido=${encodeURIComponent(resultado.id)}`);
+    // O servidor é a fonte oficial do total; não imprimir valores inventados pela interface.
+    const totalServidor = Number(resultado.total);
+    if (!Number.isFinite(totalServidor)) throw new Error('O servidor não devolveu o total do pedido.');
+    const totalTela = calcularTotal();
+    if (Math.abs(totalServidor - totalTela) > 0.005) {
+      await Promise.all([carregarPrecosPizza(), carregarTaxaEntrega()]);
+      mostrarErro(`O servidor calculou ${formatarMoeda(totalServidor)} e a tela mostrava ${formatarMoeda(totalTela)}. Verifique o valor atualizado antes de finalizar.`);
+      return null;
+    }
+    return resultado;
+  } catch (erro) {
+    if (erro.status === 401) { sessaoExpirada(); return null; }
+    mostrarErro(`Não foi possível salvar o pedido: ${erro.message}`);
+    return null;
+  } finally {
+    enviandoPedido = false;
+    document.querySelectorAll('#botaoSalvarAberto, #botaoImprimir').forEach((b) => b.disabled = false);
+  }
+}
+
+async function salvarComoAberto() {
+  const pedido = await persistirPedidoAtual();
+  if (pedido) mostrarSucesso(`Pedido ${pedido.id} salvo em aberto. Você pode reabri-lo em "Pedidos anteriores".`);
+}
+
+function abrirPopup(titulo, descricao, opcoes) {
+  const popup = document.getElementById('popupPedido');
+  document.getElementById('popupTitulo').textContent = titulo;
+  document.getElementById('popupDescricao').textContent = descricao;
+  const acoes = document.getElementById('popupAcoes');
+  acoes.replaceChildren();
+  opcoes.forEach((opcao) => {
+    acoes.appendChild(el('button', {
+      type: 'button', className: `botao ${opcao.classe || 'botao--contorno'}`,
+      text: opcao.rotulo, onClick: opcao.acao,
+    }));
+  });
+  popup.hidden = false;
+  popup.querySelector('button')?.focus();
+}
+
+function fecharPopup() {
+  document.getElementById('popupPedido').hidden = true;
+}
+
+function abrirPopupDeFinalizacao() {
   if (enviandoPedido) return;
   esconderMensagens();
+  const erro = validarPedido();
+  if (erro) { mostrarErro(erro); return; }
+  abrirPopup('Como deseja concluir o pedido?',
+    'Você pode imprimir e finalizar, confirmar sem imprimir ou voltar para editar.', [
+      { rotulo: 'Imprimir e finalizar', classe: 'botao--verde', acao: iniciarImpressao },
+      { rotulo: 'Confirmar sem imprimir', classe: 'botao--preto', acao: confirmarSemImprimir },
+      { rotulo: 'Voltar', acao: fecharPopup },
+    ]);
+}
 
-  const problema = validarPedido();
-  if (problema) {
-    mostrarErro(problema);
-    return;
-  }
+async function confirmarSemImprimir() {
+  fecharPopup();
+  const pedido = await persistirPedidoAtual();
+  if (pedido) await concluirPedido(pedido, false);
+}
 
-  const botao = document.getElementById('botaoImprimir');
+async function iniciarImpressao() {
+  fecharPopup();
+  const pedido = await persistirPedidoAtual();
+  if (!pedido) return;
+  construirComprovante(pedido);
+  window.addEventListener('afterprint', () => {
+    abrirPopup('A impressão foi concluída?',
+      'O navegador não informa se você realmente imprimiu ou cancelou a janela. Confirme para finalizar este pedido.', [
+        { rotulo: 'Sim, finalizar', classe: 'botao--verde', acao: async () => {
+          fecharPopup();
+          await concluirPedido(pedido, true);
+        } },
+        { rotulo: 'Não, manter em aberto', acao: () => {
+          fecharPopup();
+          mostrarSucesso(`Pedido ${pedido.id} continua em aberto para reimpressão ou edição.`);
+        } },
+      ]);
+  }, { once: true });
+  try { window.print(); }
+  catch (erro) { mostrarErro(`Não foi possível abrir a impressão: ${erro.message}`); }
+}
+
+async function concluirPedido(pedidoSalvo, foiImpresso) {
+  if (enviandoPedido) return;
   enviandoPedido = true;
-  botao.disabled = true;
-
-  let pedidoSalvo;
   try {
-    pedidoSalvo = await criarPedido(montarPayloadPedido());
+    const finalizado = await finalizarPedido(pedidoSalvo.id);
+    if (foiImpresso) salvarPedidoNoHistoricoLocal(registroHistorico(finalizado));
+    reiniciarPedido();
+    mostrarSucesso(`Pedido ${finalizado.id} finalizado com sucesso${foiImpresso ? ' e marcado como impresso' : ' sem impressão'}. Total: ${formatarMoeda(finalizado.total)}.`);
   } catch (erro) {
-    enviandoPedido = false;
-    botao.disabled = false;
     if (erro.status === 401) return sessaoExpirada();
-    // Impede emitir um pedido que o servidor não registrou.
-    mostrarErro(`Pedido não registrado (${erro.message}). A impressão foi cancelada.`);
-    return;
-  }
+    mostrarErro(`Não foi possível finalizar: ${erro.message}. O pedido permanece disponível para consulta.`);
+  } finally { enviandoPedido = false; }
+}
 
-  // Guarda o que foi enviado antes de reiniciar a tela.
-  const modalidade = document.getElementById('selectModalidade').value;
-  const registroLocal = {
-    id: pedidoSalvo?.id,
-    numero: document.getElementById('numeroPedido').textContent,
-    cliente: clienteSelecionado.nome,
-    itens: itensPedido.map((item) => ({
-      nome: nomeItemCompleto(item),
-      quantidade: item.quantidade,
-      preparo: ehPizza(item.produto) ? (item.tipoPreparo === 'ASSADA' ? 'Assada' : 'Pré-assada') : '',
-      observacao: item.observacao.trim(),
-      acrescimos: [...item.acrescimos],
-      preco: valorUnitarioItem(item),
+function registroHistorico(pedido) {
+  return {
+    id: pedido.id, numero: `Pedido ${pedido.id}`, cliente: clienteSelecionado?.nome,
+    modalidade: pedido.modalidade, total: pedido.total, atendente: nomeDoUsuarioLogado(),
+    criadoEm: pedido.criadoEm, itens: (pedido.itens || []).map((item) => ({
+      nome: item.meioAMeio ? `${item.nomeProduto} + ${item.segundoSabor}` : item.nomeProduto,
+      quantidade: item.quantidade, preco: item.precoUnitario,
     })),
-    modalidade,
-    endereco:
-      modalidade === 'ENTREGA'
-        ? {
-            rua: document.getElementById('endRua').value.trim(),
-            numero: document.getElementById('endNumero').value.trim(),
-            bairro: document.getElementById('endBairro').value.trim(),
-          }
-        : undefined,
-    contatoRetirada:
-      modalidade === 'RETIRADA'
-        ? {
-            nome: document.getElementById('retiradaNome').value.trim(),
-            telefone: document.getElementById('retiradaTelefone').value.trim(),
-          }
-        : undefined,
-    formaPagamento: document.getElementById('selectPagamento').value,
-    total: calcularTotal(),
-    atendente: localStorageObterUsuario()?.nome || nomeDoUsuarioLogado(),
-    criadoEm: pedidoSalvo?.criadoEm || new Date().toISOString(),
   };
+}
 
-  const subtotalServidor = Number(pedidoSalvo?.subtotalItens);
-  confirmarNumeroPedido();
-  salvarPedidoNoHistoricoLocal(registroLocal);
-  window.print();
-
-  reiniciarPedido();
-  enviandoPedido = false;
-  botao.disabled = false;
-
-  let texto = `${registroLocal.numero.replace(/^pedido/, 'Pedido')} registrado com sucesso.`;
-  if (Number.isFinite(subtotalServidor)) {
-    texto += ` Subtotal confirmado pelo servidor: ${formatarMoeda(subtotalServidor)}.`;
-    if (Math.abs(subtotalServidor - registroLocal.total) > 0.005) {
-      texto += ` Atenção: diverge do valor exibido na impressão (${formatarMoeda(registroLocal.total)}).`;
-    }
+function construirComprovante(pedido) {
+  const destino = document.getElementById('comprovanteImpressao');
+  destino.replaceChildren();
+  const linha = (texto) => destino.appendChild(el('p', { text: texto }));
+  destino.appendChild(el('h1', { text: 'CITY PIZZAS' }));
+  linha(`Pedido ${pedido.id}`);
+  linha(`Data: ${new Date(pedido.criadoEm).toLocaleString('pt-BR')}`);
+  linha(`Atendente: ${pedido.colaboradorMatricula || '—'}`);
+  linha(`Cliente: ${clienteSelecionado?.nome || pedido.clienteId}`);
+  linha(`Contato: ${formatarTelefone(pedido.telefoneContato)}`);
+  destino.appendChild(el('hr'));
+  (pedido.itens || []).forEach((item) => {
+    const nome = item.meioAMeio
+      ? `${item.nomeProduto} / ${item.segundoSabor}` : item.nomeProduto;
+    linha(`${item.quantidade} × ${nome} — ${formatarMoeda(item.subtotal)}`);
+    if (item.categoria?.toUpperCase() === 'PIZZA') linha(`Preparo: ${item.tipoPreparo === 'PRE_ASSADA' ? 'Pré-assada' : 'Assada'}`);
+    if (item.acrescimos?.length) linha(`Acréscimos: ${item.acrescimos.join(', ')}`);
+    if (item.ingredientesRemovidos?.length) linha(`Retirar: ${item.ingredientesRemovidos.join(', ')}`);
+    if (item.observacao) linha(`Obs.: ${item.observacao}`);
+  });
+  destino.appendChild(el('hr'));
+  linha(`Modalidade: ${pedido.modalidade === 'RETIRADA' ? 'Retirada' : 'Entrega'}`);
+  if (pedido.modalidade === 'ENTREGA' && pedido.enderecoEntrega) {
+    const e = pedido.enderecoEntrega;
+    linha(`Endereço: ${e.rua}, ${e.numero} — ${e.bairro}, ${e.cidade}`);
+    if (e.cep) linha(`CEP: ${e.cep}`);
+    if (e.complemento) linha(`Complemento: ${e.complemento}`);
   }
-  mostrarSucesso(texto);
+  if (pedido.modalidade === 'RETIRADA' && pedido.nomeRetirada) linha(`Retirar: ${pedido.nomeRetirada}`);
+  linha(`Pagamento: ${pedido.formaPagamento}`);
+  if (pedido.observacaoGeral) linha(`Obs. gerais: ${pedido.observacaoGeral}`);
+  destino.appendChild(el('hr'));
+  linha(`Subtotal: ${formatarMoeda(pedido.subtotalItens)}`);
+  linha(`Taxa: ${formatarMoeda(pedido.taxaEntrega)}`);
+  destino.appendChild(el('p', { className: 'comprovante-total', text: `TOTAL: ${formatarMoeda(pedido.total)}` }));
 }
 
 function sessaoExpirada() {

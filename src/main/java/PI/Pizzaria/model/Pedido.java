@@ -24,7 +24,22 @@ public class Pedido {
     private String formaPagamento;
     private BigDecimal total;
     private String situacao;
+    private String telefoneContato;
+    private String nomeRetirada;
+    private String observacaoGeral;
+    private Instant finalizadoEm;
+    private String finalizadoPorMatricula;
 
+    public String getTelefoneContato() { return telefoneContato; }
+    public void setTelefoneContato(String telefoneContato) { this.telefoneContato = telefoneContato; }
+    public String getNomeRetirada() { return nomeRetirada; }
+    public void setNomeRetirada(String nomeRetirada) { this.nomeRetirada = nomeRetirada; }
+    public String getObservacaoGeral() { return observacaoGeral; }
+    public void setObservacaoGeral(String observacaoGeral) { this.observacaoGeral = observacaoGeral; }
+    public Instant getFinalizadoEm() { return finalizadoEm; }
+    public void setFinalizadoEm(Instant finalizadoEm) { this.finalizadoEm = finalizadoEm; }
+    public String getFinalizadoPorMatricula() { return finalizadoPorMatricula; }
+    public void setFinalizadoPorMatricula(String finalizadoPorMatricula) { this.finalizadoPorMatricula = finalizadoPorMatricula; }
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getClienteId() { return clienteId; }
