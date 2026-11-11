@@ -35,7 +35,7 @@ public class PedidoService {
     private final ClienteRepository clienteRepository;
     private final ProdutoRepository produtoRepository;
     private final String precoBaseConfigurado;
-    private final String precoMeioAMeioConfigurado;
+    private final String precoPreAssadaConfigurado;
     private static final BigDecimal PRECO_POR_ACRESCIMO =
         new BigDecimal("5.00");
 
@@ -44,13 +44,13 @@ public class PedidoService {
             ClienteRepository clienteRepository,
             ProdutoRepository produtoRepository,
             @Value("${app.pizza.preco-base:}") String precoBaseConfigurado,
-            @Value("${app.pizza.preco-meio-a-meio:}") String precoMeioAMeioConfigurado) {
+            @Value("${app.pizza.preco-pre-assada:}") String precoPreAssadaConfigurado) {
 
         this.pedidoRepository = pedidoRepository;
         this.clienteRepository = clienteRepository;
         this.produtoRepository = produtoRepository;
         this.precoBaseConfigurado = precoBaseConfigurado;
-        this.precoMeioAMeioConfigurado = precoMeioAMeioConfigurado;
+        this.precoPreAssadaConfigurado = precoPreAssadaConfigurado;
     }
 
     public Pedido criar(PedidoRequest dados, Colaborador atendente) {
@@ -229,8 +229,10 @@ public class PedidoService {
         BigDecimal precoUnitario;
 
         if (pizza) {
-            precoUnitario = dados.isMeioAMeio()
-                    ? obterPrecoMeioAMeio()
+            // O preço depende do preparo (assada ou pré-assada),
+            // nunca da quantidade de sabores (inteira ou meio a meio).
+            precoUnitario = item.getTipoPreparo() == ItemPedido.TipoPreparo.PRE_ASSADA
+                    ? obterPrecoPreAssada()
                     : obterPrecoBasePizza();
         } else {
 
@@ -321,19 +323,19 @@ public class PedidoService {
         return lerPrecoConfigurado(precoBaseConfigurado, "Preço-base das pizzas");
     }
 
-    private BigDecimal obterPrecoMeioAMeio() {
-        // Sem valor próprio, usa o mesmo valor da pizza inteira (regra PB14).
-        if (precoMeioAMeioConfigurado == null || precoMeioAMeioConfigurado.isBlank()) {
+    private BigDecimal obterPrecoPreAssada() {
+        // Padrão compatível: sem preço específico, mantém o preço-base.
+        if (precoPreAssadaConfigurado == null || precoPreAssadaConfigurado.isBlank()) {
             return obterPrecoBasePizza();
         }
-        return lerPrecoConfigurado(precoMeioAMeioConfigurado, "Preço das pizzas meio a meio");
+        return lerPrecoConfigurado(precoPreAssadaConfigurado, "Preço das pizzas pré-assadas");
     }
 
-    /** Preços oficiais da API para a tela do pedido; nunca calcula média por sabor. */
+    /** Preços oficiais da API, definidos pelo preparo e não pelo número de sabores. */
     public Map<String, BigDecimal> consultarPrecosPizza() {
         return Map.of(
                 "precoBase", obterPrecoBasePizza(),
-                "precoMeioAMeio", obterPrecoMeioAMeio());
+                "precoPreAssada", obterPrecoPreAssada());
     }
 
     private BigDecimal lerPrecoConfigurado(String configuracao, String descricao) {

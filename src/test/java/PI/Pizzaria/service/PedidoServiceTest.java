@@ -150,17 +150,30 @@ class PedidoServiceTest {
     }
 
     @Test
-    void configuracaoSeparadaDeMeioAMeioNaoFazMediaDosSabores() {
-        PedidoService comPrecoMeioAMeio = new PedidoService(
+    void configuracaoSeparadaDePreAssadaNaoFazMediaDosSabores() {
+        PedidoService comPrecoPreAssada = new PedidoService(
                 pedidoRepository, clienteRepository, produtoRepository,
-                "59.00", "65.00");
+                "59.00", "49.00");
         ItemPedidoRequest metade = item("pizza-1");
         metade.setMeioAMeio(true);
         metade.setSegundoProdutoId("pizza-2");
-        Pedido pedido = comPrecoMeioAMeio.criar(requisicao(metade), atendente);
-        assertEquals(new BigDecimal("65.00"), pedido.getItens().get(0).getPrecoUnitario());
-        assertEquals(new BigDecimal("65.00"), pedido.getSubtotalItens());
-        assertEquals(new BigDecimal("59.00"), comPrecoMeioAMeio.consultarPrecosPizza().get("precoBase"));
+        metade.setTipoPreparo(ItemPedido.TipoPreparo.PRE_ASSADA);
+        Pedido preAssadaMeio = comPrecoPreAssada.criar(requisicao(metade), atendente);
+        assertEquals(new BigDecimal("49.00"), preAssadaMeio.getItens().get(0).getPrecoUnitario());
+        assertEquals(new BigDecimal("49.00"), preAssadaMeio.getSubtotalItens());
+
+        ItemPedidoRequest inteira = item("pizza-1");
+        inteira.setTipoPreparo(ItemPedido.TipoPreparo.PRE_ASSADA);
+        Pedido preAssadaInteira = comPrecoPreAssada.criar(requisicao(inteira), atendente);
+        assertEquals(new BigDecimal("49.00"), preAssadaInteira.getSubtotalItens());
+
+        metade.setTipoPreparo(ItemPedido.TipoPreparo.ASSADA);
+        Pedido assadaMeio = comPrecoPreAssada.criar(requisicao(metade), atendente);
+        assertEquals(new BigDecimal("59.00"), assadaMeio.getSubtotalItens());
+        Pedido assadaInteira = comPrecoPreAssada.criar(requisicao(item("pizza-1")), atendente);
+        assertEquals(new BigDecimal("59.00"), assadaInteira.getSubtotalItens());
+        assertEquals(new BigDecimal("59.00"), comPrecoPreAssada.consultarPrecosPizza().get("precoBase"));
+        assertEquals(new BigDecimal("49.00"), comPrecoPreAssada.consultarPrecosPizza().get("precoPreAssada"));
     }
 
     @Test

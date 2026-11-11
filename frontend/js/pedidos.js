@@ -3,7 +3,7 @@ let itensPedido = [];
 let proximoUid = 1;
 let catalogoProdutos = [];
 let enviandoPedido = false;
-let precosPizza = { precoBase: null, precoMeioAMeio: null };
+let precosPizza = { precoBase: null, precoPreAssada: null };
 
 const VALOR_ACRESCIMO = 5.0;
 const QUANTIDADE_MIN = 1;
@@ -125,8 +125,8 @@ function ehPizza(produto) {
 async function carregarPrecosPizza() {
   try {
     const precos = await consultarPrecosPizza();
-    precosPizza.precoBase = Number(precos.precoBase);
-    precosPizza.precoMeioAMeio = Number(precos.precoMeioAMeio);
+    precosPizza.precoBase = precos.precoBase == null ? null : Number(precos.precoBase);
+    precosPizza.precoPreAssada = precos.precoPreAssada == null ? null : Number(precos.precoPreAssada);
   } catch (erro) {
     mostrarErro(`Preços de pizza indisponíveis: ${erro.message}. Configure PIZZA_PRECO_BASE no servidor.`);
   }
@@ -261,12 +261,12 @@ function itemPorUid(uid) {
   return itensPedido.find((item) => item.uid === uid);
 }
 
-/** Usa os preços oficiais configurados no back-end, nunca a média dos sabores. */
+/** Preço da pizza depende apenas do preparo, não de ser inteira ou meio a meio. */
 function valorUnitarioItem(item) {
   let preco = precoDoProduto(item.produto);
   if (ehPizza(item.produto)) {
-    preco = item.meioAMeio ? precosPizza.precoMeioAMeio : precosPizza.precoBase;
-    if (!Number.isFinite(preco) || preco === null) return null;
+    preco = item.tipoPreparo === 'PRE_ASSADA' ? precosPizza.precoPreAssada : precosPizza.precoBase;
+    if (preco === null || !Number.isFinite(preco)) return null;
   }
   return preco + item.acrescimos.length * VALOR_ACRESCIMO;
 }
@@ -420,6 +420,7 @@ function criarControlePreparo(item) {
         item.tipoPreparo = select.value;
         const alt = select.parentElement.querySelector('.item-pedido__preparo-alt');
         if (alt) alt.textContent = item.tipoPreparo === 'ASSADA' ? 'sai pronta (assada)' : 'sai para terminar em casa (pré-assada)';
+        atualizarLinha(item);
       },
     },
     el('option', { value: 'ASSADA', text: 'Assada', selected: item.tipoPreparo === 'ASSADA' }),
@@ -610,7 +611,7 @@ function validarPedido() {
       return `Quantidade inválida em "${nome}": use um valor de ${QUANTIDADE_MIN} a ${QUANTIDADE_MAX}.`;
     }
     if (ehPizza(item.produto) && valorUnitarioItem(item) == null) {
-      return 'O preço da pizza não está configurado no servidor. Configure PIZZA_PRECO_BASE (e, se necessário, PIZZA_PRECO_MEIO_A_MEIO).';
+      return 'O preço da pizza não está configurado no servidor. Configure PIZZA_PRECO_BASE (e, se necessário, PIZZA_PRECO_PRE_ASSADA).';
     }
     if (item.meioAMeio && !item.segundoProduto) {
       document.querySelector(`.item-pedido[data-uid="${item.uid}"] select[aria-label="Segundo sabor"]`)?.classList.add('campo-invalido');
