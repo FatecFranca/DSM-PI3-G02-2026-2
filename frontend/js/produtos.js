@@ -1,4 +1,4 @@
-/** PB07/PB08: manutenção de produtos com apresentações diferentes para bebidas. */
+/* ---------- Cadastro e busca de produtos ---------- */
 function configurarCadastroProdutos() {
   const form = document.getElementById('formProduto');
   const mensagem = document.getElementById('mensagemProduto');

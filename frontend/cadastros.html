@@ -10,6 +10,7 @@
 </head>
 <body>
 
+  <!-- Cabeçalho -->
   <header class="cabecalho">
     <a href="pedidos.html" class="cabecalho__marca">City Pizzas</a>
     <nav class="cabecalho__nav">
@@ -22,6 +23,7 @@
     <h1 class="cadastro__titulo">Cadastros</h1>
     <p class="cadastro__subtitulo">Gerencie clientes e produtos do catálogo. Somente o administrador pode cadastrar colaboradores.</p>
 
+    <!-- Abas -->
     <div class="cadastro__abas">
       <button type="button" class="cadastro__aba ativa" data-aba="cliente">Cliente</button>
       <button type="button" class="cadastro__aba" data-aba="colaborador">Colaborador</button>
@@ -109,6 +111,7 @@
         </form>
       </div>
 
+      <!-- Aba Colaborador -->
       <div id="abaColaborador" class="aba-conteudo" style="display:none;">
         <div class="cadastro__bloqueado" id="bloqueioColaborador">
           Cadastro de colaborador é restrito ao administrador.
@@ -134,7 +137,7 @@
         </div>
       </div>
 
-      <!-- PB07/PB08: cadastro, manutenção e apresentações de bebidas. -->
+      <!-- Aba Produto -->
       <div id="abaProduto" class="aba-conteudo" style="display:none;">
         <h2 class="cadastro__subtitulo">Cadastrar ou editar produto</h2>
         <div id="mensagemProduto" class="mensagem" role="status" aria-live="polite"></div>

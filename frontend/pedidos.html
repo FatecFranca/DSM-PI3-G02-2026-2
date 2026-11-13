@@ -10,6 +10,7 @@
 </head>
 <body>
 
+  <!-- Cabeçalho -->
   <header class="cabecalho">
     <a href="pedidos.html" class="cabecalho__marca">City Pizzas</a>
     <nav class="cabecalho__nav">
@@ -36,14 +37,17 @@
       </div>
     </div>
 
+    <!-- Mensagens -->
     <div id="mensagemErro" class="mensagem mensagem--erro" role="alert"></div>
     <div id="mensagemSucesso" class="mensagem mensagem--sucesso" role="status"></div>
 
+    <!-- Busca de cliente -->
     <div id="painelCliente" class="busca-produto" style="max-width:420px; display:none;">
       <input type="text" id="campoBuscaCliente" placeholder="Buscar cliente por nome ou telefone" autocomplete="off" />
       <div class="busca-produto__resultados" id="resultadosCliente"></div>
     </div>
 
+    <!-- Busca de produto -->
     <div class="busca-produto">
       <input type="text" id="campoBuscaProduto" placeholder="Buscar produto (nome, sabor ou categoria)" autocomplete="off" aria-label="Buscar produto" />
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -53,17 +57,20 @@
       <div class="busca-produto__resultados" id="resultadosProduto"></div>
     </div>
 
+    <!-- Itens do pedido (cards) -->
     <section class="itens-pedido" id="itensPedido">
       <p class="pedido__vazio" id="pedidoVazio">Nenhum item adicionado ainda. Busque um produto acima.</p>
     </section>
 
     <p class="pedido__aviso">Pedidos podem ser salvos em aberto e retomados em "Pedidos anteriores". A taxa de entrega é calculada pelo servidor.</p>
 
+    <!-- Contato -->
     <div class="campo pedido__contato">
       <label for="telefoneContato">Telefone para contato (editável)</label>
       <input type="tel" id="telefoneContato" placeholder="(16) 99999-9999" autocomplete="tel" />
     </div>
 
+    <!-- Entrega / Retirada -->
     <section class="modalidade">
       <div class="modalidade__opcoes">
         <select id="selectModalidade">
@@ -111,6 +118,7 @@
       </div>
     </section>
 
+    <!-- Pagamento e total -->
     <section class="pedido__rodape">
       <label for="selectPagamento">Forma de pagamento:</label>
       <select id="selectPagamento">
@@ -128,11 +136,13 @@
       </div>
     </section>
 
+    <!-- Observações gerais -->
     <div class="campo">
       <label for="observacaoGeral">Observações gerais (opcional)</label>
       <textarea id="observacaoGeral" rows="2" maxlength="500" placeholder="Ex: campainha quebrada, ponto de referência..."></textarea>
     </div>
 
+    <!-- Ações do pedido -->
     <div class="pedido__base">
       <span class="pedido__atendente" id="atendentePedido">Atendente: —</span>
       <div class="pedido__acoes-base">
@@ -144,6 +154,7 @@
 
   </main>
 
+  <!-- Popup de finalização -->
   <div id="popupPedido" class="popup-pedido" hidden>
     <div class="popup-pedido__fundo" aria-hidden="true"></div>
     <section class="popup-pedido__conteudo" role="dialog" aria-modal="true" aria-labelledby="popupTitulo">
@@ -153,6 +164,7 @@
     </section>
   </div>
 
+  <!-- Comprovante de impressão -->
   <section id="comprovanteImpressao" class="comprovante-impressao" aria-hidden="true"></section>
 
   <script src="js/api.js"></script>

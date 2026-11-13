@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('linkSair').addEventListener('click', async (evento) => {
     evento.preventDefault();
-    try { await encerrarSessaoNoServidor(); } catch (_) { /* rede indisponível */ }
+    try { await encerrarSessaoNoServidor(); } catch (_) {  }
     localStorageEncerrarSessao();
     window.location.href = 'index.html';
   });
@@ -119,7 +119,6 @@ function restaurarClienteRecemCadastrado() {
   }
 }
 
-/** Preenche somente ao selecionar; os campos seguem livres para edição no pedido. */
 function selecionarCliente(cliente) {
   clienteSelecionado = cliente;
   document.getElementById('nomeCliente').textContent = cliente?.nome || 'Cliente não selecionado';
@@ -128,6 +127,7 @@ function selecionarCliente(cliente) {
   preencherEndereco(cliente?.endereco || {});
 }
 
+/* ---------- Endereço e taxa de entrega ---------- */
 const CAMPOS_ENDERECO = {
   rua: 'endRua', numero: 'endNumero', bairro: 'endBairro',
   cidade: 'endCidade', cep: 'endCep', complemento: 'endComplemento',
@@ -162,6 +162,7 @@ async function carregarTaxaEntrega() {
   atualizarTotal();
 }
 
+/* ---------- Reabrir pedido em aberto ---------- */
 async function abrirPedidoDaUrl(id = new URLSearchParams(window.location.search).get('pedido')) {
   if (!id) return;
   try {
@@ -354,7 +355,6 @@ function itemPorUid(uid) {
   return itensPedido.find((item) => item.uid === uid);
 }
 
-/** Preço da pizza depende apenas do preparo, não de ser inteira ou meio a meio. */
 function valorUnitarioItem(item) {
   let preco = precoDoProduto(item.produto);
   if (ehPizza(item.produto)) {
@@ -457,7 +457,7 @@ function atualizarLinha(item) {
   atualizarTotal();
 }
 
-/* --- Pizza inteira / meio a meio --- */
+/* ---------- Pizza inteira / meio a meio ---------- */
 
 function criarControleTamanho(item) {
   const nome = `tamanho-${item.uid}`;
@@ -502,7 +502,7 @@ function criarSeletorSegundoSabor(item) {
   return el('div', { className: 'item-pedido__linha' }, el('span', { text: '2º sabor:' }), select);
 }
 
-/* --- Assada / pré-assada --- */
+/* ---------- Assada / pré-assada ---------- */
 
 function criarControlePreparo(item) {
   const select = el(
@@ -528,7 +528,7 @@ function criarControlePreparo(item) {
   );
 }
 
-/* --- Quantidade --- */
+/* ---------- Quantidade ---------- */
 
 function criarControleQuantidade(item) {
   const campo = el('input', {
@@ -568,7 +568,7 @@ function criarControleQuantidade(item) {
   );
 }
 
-/* --- Observação (texto livre com sugestões) --- */
+/* ---------- Observação (texto livre com sugestões) ---------- */
 
 function criarCampoObservacao(item) {
   const idLista = `sugestoes-${item.uid}`;
@@ -588,7 +588,7 @@ function criarCampoObservacao(item) {
   return el('div', { className: 'item-pedido__linha' }, el('span', { text: 'obs:' }), campo, lista);
 }
 
-/* --- Acréscimos (R$ 5,00 por ingrediente) --- */
+/* ---------- Acréscimos (R$ 5,00 por ingrediente) ---------- */
 
 function criarAcrescimos(item) {
   const campo = el('input', {
@@ -608,7 +608,7 @@ function criarAcrescimos(item) {
     }
     item.acrescimos.push(nome);
     renderizarItens();
-    // Mantém o foco para adicionar vários ingredientes seguidos.
+
     document.querySelector(`.item-pedido[data-uid="${item.uid}"] .acrescimo__campo`)?.focus();
   };
 
@@ -646,7 +646,7 @@ function criarAcrescimos(item) {
   );
 }
 
-/* ---------- Modalidade e total (Sprint 4) ---------- */
+/* ---------- Modalidade e total ---------- */
 
 function configurarModalidade() {
   document.getElementById('selectModalidade').addEventListener('change', atualizarCamposModalidade);
@@ -659,7 +659,7 @@ function configurarModalidade() {
       return;
     }
     const endereco = await consultarCep(digitado);
-    // Se a consulta falhar, todos os campos podem continuar sendo preenchidos manualmente.
+
     if (!endereco || somenteDigitos(cep.value) !== digitado) return;
     [['endRua', endereco.rua], ['endBairro', endereco.bairro], ['endCidade', endereco.cidade]]
       .forEach(([id, valor]) => { if (valor) document.getElementById(id).value = valor; });
@@ -778,6 +778,7 @@ function montarPayloadPedido() {
   };
 }
 
+/* ---------- Salvar e finalizar pedido ---------- */
 async function persistirPedidoAtual() {
   if (enviandoPedido) return null;
   esconderMensagens();
@@ -792,7 +793,7 @@ async function persistirPedidoAtual() {
     pedidoEmEdicaoId = resultado.id;
     document.getElementById('numeroPedido').textContent = `pedido ${resultado.id}`;
     window.history.replaceState({}, '', `pedidos.html?pedido=${encodeURIComponent(resultado.id)}`);
-    // O servidor é a fonte oficial do total; não imprimir valores inventados pela interface.
+
     const totalServidor = Number(resultado.total);
     if (!Number.isFinite(totalServidor)) throw new Error('O servidor não devolveu o total do pedido.');
     const totalTela = calcularTotal();
@@ -817,6 +818,7 @@ async function salvarComoAberto() {
   if (pedido) mostrarSucesso(`Pedido ${pedido.id} salvo em aberto. Você pode reabri-lo em "Pedidos anteriores".`);
 }
 
+/* ---------- Popup de finalização ---------- */
 function abrirPopup(titulo, descricao, opcoes) {
   const popup = document.getElementById('popupPedido');
   document.getElementById('popupTitulo').textContent = titulo;
@@ -892,6 +894,7 @@ async function concluirPedido(pedidoSalvo, foiImpresso) {
   } finally { enviandoPedido = false; }
 }
 
+/* ---------- Histórico local e comprovante de impressão ---------- */
 function registroHistorico(pedido) {
   return {
     id: pedido.id, numero: `Pedido ${pedido.id}`, cliente: clienteSelecionado?.nome,
