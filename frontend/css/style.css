@@ -421,19 +421,17 @@ button {
   height: 64px;
   border: 1px solid var(--preto);
   border-radius: 4px;
-  /* Um único X centralizado; mantém o quadrado de 64 × 64 px. */
+
   background: linear-gradient(45deg, transparent calc(50% - 0.8px), var(--preto) 50%, transparent calc(50% + 0.8px)),
               linear-gradient(-45deg, transparent calc(50% - 0.8px), var(--preto) 50%, transparent calc(50% + 0.8px));
   background-color: #FFF;
 }
 
-/* Para pizza meio a meio, apenas uma diagonal. */
 .item-pedido__imagem--meio {
   background: linear-gradient(45deg, transparent calc(50% - 0.8px), var(--preto) 50%, transparent calc(50% + 0.8px));
   background-color: #FFF;
 }
 
-/* Outros produtos continuam com o mesmo quadrado, sem marcação de pizza. */
 .item-pedido__imagem--produto {
   background: #FFF;
 }
@@ -716,7 +714,7 @@ button {
   }
 }
 
-/* Sprint 2 — busca e cadastro de colaboradores no padrão visual existente. */
+/* ---------- Colaboradores e busca de cadastro ---------- */
 .cadastro__busca { display:flex; gap:10px; }
 .cadastro__busca input { min-width:0; flex:1; }
 .cadastro__resultado { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--cinza-borda); }
@@ -768,7 +766,7 @@ button {
   .quantidade__botao, .acrescimo__adicionar, .acrescimo__remover, .pedido__aviso, #botaoTrocarCliente { display: none !important; }
 }
 
-/* PB07/PB08: mesmo estilo das demais abas de cadastro. */
+/* ---------- Produtos ---------- */
 .cadastro__botoes-produto { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
 .cadastro__resultado-produto { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--cinza-borda); }
 .cadastro__resultado-produto p { margin:3px 0; font-size:0.8rem; color:var(--cinza-texto); }
@@ -781,7 +779,7 @@ button {
   .cadastro__acoes-produto .botao { flex:1; }
 }
 
-/* Sprint 4: dados de entrega, total e confirmação de pedido */
+/* ---------- Pedido: contato, popup e comprovante de impressão ---------- */
 .pedido__contato { max-width:360px; }
 .pedido__contato input { width:100%; padding:10px 12px; border:1px solid var(--preto); border-radius:6px; }
 .modalidade__campos { grid-template-columns: repeat(3, minmax(0, 1fr)); }

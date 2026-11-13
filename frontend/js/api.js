@@ -1,19 +1,3 @@
-/**
- * api.js — ponto único de integração com a API REST (Spring Boot).
- *
- * Contrato Sprint 2: sessão no back-end e autorização por token.
- *   POST /auth/login             { matricula, senha }  -> { matricula, perfil }   (401 + texto se errar)
- *   POST /auth/recuperar-senha   { email }             -> texto com o código
- *   POST /auth/redefinir-senha   { email, codigo, novaSenha } -> texto
- *   GET  /pizzas                 -> [{ id, nome, sabor, tamanho, preco }]
- *   POST /colaboradores          { nome, matricula, email, senha, perfil }
- *
- *   GET  /clientes/busca?termo=... -> [{ id, nome, telefone, endereco, ... }]
- *   POST /clientes                    -> cliente cadastrado
- *   GET  /colaboradores               -> lista (somente administrador)
- *   POST /auth/admin/redefinir-senha  -> redefinição pelo administrador
- */
-
 const API_BASE_URL = 'http://localhost:8080';
 
 async function requisitar(caminho, opcoes = {}) {
@@ -22,7 +6,6 @@ async function requisitar(caminho, opcoes = {}) {
     ...(opcoes.headers || {}),
   };
 
-  // Token opaco gerado pelo back-end; não é um JWT.
   const token = localStorageObterToken();
   if (token) {
     cabecalhos['Authorization'] = `Bearer ${token}`;
@@ -40,7 +23,7 @@ async function requisitar(caminho, opcoes = {}) {
   try {
     corpo = texto ? JSON.parse(texto) : null;
   } catch {
-    corpo = texto; 
+    corpo = texto;
   }
 
   if (!resposta.ok) {
@@ -73,7 +56,6 @@ class ErroApi extends Error {
   }
 }
 
-
 function login(matricula, senha) {
   return requisitar('/auth/login', {
     method: 'POST',
@@ -97,12 +79,10 @@ function redefinirSenha(email, codigo, novaSenha) {
 
 /* ---------- Clientes ---------- */
 
-/** GET /clientes/busca?termo=... — pesquisa parcial de nome ou telefone. */
 function buscarClientes(termo) {
   return requisitar(`/clientes/busca?termo=${encodeURIComponent(termo.trim())}`, { method: 'GET' });
 }
 
-/** POST /clientes — endereço é um objeto (rua, número, bairro, cidade, CEP). */
 function cadastrarCliente(dadosCliente) {
   return requisitar('/clientes', {
     method: 'POST',
@@ -218,12 +198,6 @@ function cancelarPedido(pedidoId) {
 
 /* ---------- Sessão local ---------- */
 
-
-/*
- * A sessão só é considerada válida no front-end com token; o back-end confirma
- * o token e as permissões a cada requisição protegida.
- */
-
 function localStorageSalvarSessao({ matricula, perfil, nome, token }) {
   if (!token || !matricula || !perfil) throw new Error('Sessão inválida recebida do servidor.');
   localStorage.setItem('cityPizzas_token', token);
@@ -252,7 +226,6 @@ function usuarioEhAdministrador() {
   return localStorageObterUsuario()?.perfil === 'administrador';
 }
 
-/** Mantido para compatibilidade com o protótipo de pedidos, mas sem acesso de teste. */
 function emModoTeste() { return false; }
 
 function nomeDoUsuarioLogado() {

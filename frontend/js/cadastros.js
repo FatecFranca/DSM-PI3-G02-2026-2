@@ -1,8 +1,3 @@
-/**
- * cadastros.js — busca/cadastro de clientes e administração de colaboradores.
- * Sprint 2 (PB01 a PB06). Mantém a estrutura de abas do protótipo.
- */
-
 document.addEventListener('DOMContentLoaded', () => {
   if (!usuarioEstaLogado()) {
     window.location.href = 'index.html';
@@ -72,7 +67,7 @@ function configurarFormularioCliente() {
       telefone: somenteDigitos(campos.telefone.value),
       cpf: somenteDigitos(campos.cpf.value),
       email: campos.email.value.trim() || undefined,
-      dataNascimento: campos.dataNascimento.value || undefined, // yyyy-MM-dd (LocalDate)
+      dataNascimento: campos.dataNascimento.value || undefined,
       endereco: montarEndereco(),
     };
 
@@ -96,7 +91,6 @@ function configurarFormularioCliente() {
     }
   });
 
-  /** O model Endereco.java persiste campos separados no MongoDB. */
   function montarEndereco() {
     return {
       cep: somenteDigitos(campos.cep.value),
@@ -275,7 +269,7 @@ function configurarCadastroColaborador() {
 function configurarSaida() {
   document.getElementById('linkSairCadastro').addEventListener('click', async (evento) => {
     evento.preventDefault();
-    try { await encerrarSessaoNoServidor(); } catch (_) { /* rede indisponível */ }
+    try { await encerrarSessaoNoServidor(); } catch (_) {  }
     localStorageEncerrarSessao();
     window.location.href = 'index.html';
   });

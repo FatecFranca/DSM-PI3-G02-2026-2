@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ---------- Login ---------- */
 
-  // Enter na matrícula avança para a senha; Enter na senha envia o formulário.
-  // Evita que o Enter no primeiro campo tente fazer login prematuramente.
   campoUsuario.addEventListener('keydown', (evento) => {
     if (evento.key === 'Enter' && !evento.isComposing) {
       evento.preventDefault();
@@ -46,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alternarCarregando(botaoEntrar, true, 'Entrando...', 'Entrar');
 
     try {
-      // POST /auth/login -> { matricula, nome, perfil, token }
+
       const resultado = await login(matricula, senha);
 
       if (!resultado || !resultado.perfil) {
@@ -103,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
       botaoRecuperar.disabled = true;
 
       if (!codigoJaSolicitado) {
-        // Etapa 1 — POST /auth/recuperar-senha { email }
+
         await solicitarRecuperacaoSenha(email);
         mostrarInfo('Se o e-mail estiver cadastrado, você receberá um código.');
         etapaCodigo.style.display = 'block';

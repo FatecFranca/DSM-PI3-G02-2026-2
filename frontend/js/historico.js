@@ -1,4 +1,3 @@
-/** Histórico de impressão local + pesquisa de pedidos abertos no MongoDB. */
 document.addEventListener('DOMContentLoaded', () => {
   if (!usuarioEstaLogado()) {
     window.location.href = 'index.html';
@@ -18,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarHistoricoLocal();
 });
 
+/* ---------- Cards de pedido ---------- */
 function novoElemento(tag, texto, classe) {
   const elemento = document.createElement(tag);
   if (texto != null) elemento.textContent = String(texto);
@@ -38,6 +38,7 @@ function formatarData(data) {
   return Number.isNaN(valor.getTime()) ? 'Data inválida' : valor.toLocaleString('pt-BR');
 }
 
+/* ---------- Pedidos abertos ---------- */
 async function carregarPedidosAbertos(termo) {
   const destino = document.getElementById('listaPedidosAbertos');
   const aviso = document.getElementById('avisoPedidosAbertos');
@@ -82,6 +83,7 @@ async function carregarPedidosAbertos(termo) {
   }
 }
 
+/* ---------- Pedidos finalizados ---------- */
 async function carregarPedidosFinalizados(termo) {
   const destino = document.getElementById('listaFinalizados');
   const aviso = document.getElementById('avisoFinalizados');
@@ -118,6 +120,7 @@ async function carregarPedidosFinalizados(termo) {
   }
 }
 
+/* ---------- Histórico de impressão local ---------- */
 function carregarHistoricoLocal() {
   let historico = [];
   try { historico = JSON.parse(localStorage.getItem('cityPizzas_historicoPedidos') || '[]'); }
