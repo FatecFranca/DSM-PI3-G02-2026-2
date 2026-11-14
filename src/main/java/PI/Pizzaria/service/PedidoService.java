@@ -78,6 +78,17 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    public Pedido atualizarComoAdministrador(
+        String id, PedidoRequest dados, Colaborador administrador) {
+
+    validarAdministrador(administrador);
+
+    Pedido pedido = buscarPorId(id);
+    aplicarDados(pedido, dados);
+
+    return pedidoRepository.save(pedido);
+    }
+
     /** Finalização explícita — imprimir por si só não confirma impressão física. */
     public Pedido finalizar(String id, Colaborador atendente) {
         validarAtendente(atendente);
@@ -116,6 +127,16 @@ public class PedidoService {
         if (atendente == null || atendente.getId() == null || atendente.getId().isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Faça login para trabalhar com pedidos.");
         }
+    }
+
+    private void validarAdministrador(Colaborador administrador) {
+    validarAtendente(administrador);
+
+    if (administrador.getPerfil() != Colaborador.Perfil.administrador) {
+        throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "Acesso permitido apenas ao administrador.");
+    }
     }
 
     private void aplicarDados(Pedido pedido, PedidoRequest dados) {
@@ -229,6 +250,14 @@ public class PedidoService {
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
                                 "Pedido não encontrado."));
+    }
+
+    public void excluirComoAdministrador(String id, Colaborador administrador) {
+    validarAdministrador(administrador);
+
+    Pedido pedido = buscarPorId(id);
+
+    pedidoRepository.deleteById(pedido.getId());
     }
 
     private ItemPedido montarItem(ItemPedidoRequest dados) {
