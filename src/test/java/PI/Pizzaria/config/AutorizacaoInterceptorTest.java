@@ -30,6 +30,24 @@ class AutorizacaoInterceptorTest {
     }
 
     @Test
+    void proibeAuditoriaEAlteracaoAdministrativaParaFuncionario() throws Exception {
+        SessaoService sessao = mock(SessaoService.class);
+        Colaborador funcionario = new Colaborador();
+        funcionario.setPerfil(Colaborador.Perfil.funcionario);
+        when(sessao.autenticar("Bearer token")).thenReturn(funcionario);
+
+        for (String caminho : new String[]{"/auditoria", "/pedidos/admin/123"}) {
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            HttpServletResponse response = mock(HttpServletResponse.class);
+            when(request.getRequestURI()).thenReturn(caminho);
+            when(request.getHeader("Authorization")).thenReturn("Bearer token");
+            when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+            assertFalse(new AutorizacaoInterceptor(sessao).preHandle(request, response, new Object()));
+            verify(response).setStatus(403);
+        }
+    }
+
+    @Test
     void recusaRequisicaoSemSessao() throws Exception {
         SessaoService sessao = mock(SessaoService.class);
         HttpServletRequest request = mock(HttpServletRequest.class);

@@ -20,15 +20,18 @@ import PI.Pizzaria.dto.PedidoRequest;
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.model.Pedido;
 import PI.Pizzaria.service.PedidoService;
+import PI.Pizzaria.service.AuditoriaService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/pedidos")
 public class PedidoController {
     private final PedidoService pedidoService;
+    private final AuditoriaService auditoriaService;
 
-    public PedidoController(PedidoService pedidoService) {
+    public PedidoController(PedidoService pedidoService, AuditoriaService auditoriaService) {
         this.pedidoService = pedidoService;
+        this.auditoriaService = auditoriaService;
     }
 
     @PostMapping
@@ -49,8 +52,9 @@ public class PedidoController {
         @RequestBody PedidoRequest dados,
         @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
 
-    return ResponseEntity.ok(
-            pedidoService.atualizarComoAdministrador(id, dados, administrador));
+    Pedido atualizado = pedidoService.atualizarComoAdministrador(id, dados, administrador);
+    auditoriaService.registrar(administrador, "ALTERACAO_PEDIDO", "PEDIDO", id);
+    return ResponseEntity.ok(atualizado);
 }
 
     @DeleteMapping("/admin/{id}")
@@ -59,6 +63,7 @@ public class PedidoController {
         @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
 
     pedidoService.excluirComoAdministrador(id, administrador);
+    auditoriaService.registrar(administrador, "EXCLUSAO_PEDIDO", "PEDIDO", id);
     return ResponseEntity.noContent().build();
     }
 

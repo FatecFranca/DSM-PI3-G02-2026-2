@@ -30,7 +30,8 @@ public class AutorizacaoInterceptor implements HandlerInterceptor {
         }
 
         String caminho = request.getRequestURI();
-        if ((caminho.startsWith("/colaboradores") || caminho.startsWith("/auth/admin/"))
+        if ((caminho.startsWith("/colaboradores") || caminho.startsWith("/auth/admin/")
+                || caminho.startsWith("/pedidos/admin/") || caminho.equals("/auditoria") || caminho.startsWith("/auditoria/"))
                 && usuario.getPerfil() != Colaborador.Perfil.administrador) {
             responderErro(response, 403, "Acesso permitido apenas ao administrador.");
             return false;

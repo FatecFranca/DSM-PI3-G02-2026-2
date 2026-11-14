@@ -17,16 +17,21 @@ import PI.Pizzaria.dto.RedefinicaoAdminRequest;
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.service.AuthServicy;
 import PI.Pizzaria.service.SessaoService;
+import PI.Pizzaria.service.AuditoriaService;
+import org.springframework.web.bind.annotation.RequestAttribute;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
     private final AuthServicy authServicy;
     private final SessaoService sessaoService;
+    private final AuditoriaService auditoriaService;
 
-    public AuthController(AuthServicy authServicy, SessaoService sessaoService) {
+    public AuthController(AuthServicy authServicy, SessaoService sessaoService,
+                          AuditoriaService auditoriaService) {
         this.authServicy = authServicy;
         this.sessaoService = sessaoService;
+        this.auditoriaService = auditoriaService;
     }
 
     @PostMapping("/login")
@@ -53,9 +58,11 @@ public class AuthController {
 
     @PostMapping("/admin/redefinir-senha")
     public ResponseEntity<String> redefinirSenhaPeloAdministrador(
-            @RequestBody RedefinicaoAdminRequest request) {
+            @RequestBody RedefinicaoAdminRequest request,
+            @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
         // A permissão de administrador é checada no interceptor do back-end.
         authServicy.redefinirSenhaPeloAdministrador(request.getColaboradorId(), request.getNovaSenha());
+        auditoriaService.registrar(administrador, "REDEFINICAO_SENHA", "COLABORADOR", request.getColaboradorId());
         return ResponseEntity.ok("Senha redefinida pelo administrador.");
     }
 

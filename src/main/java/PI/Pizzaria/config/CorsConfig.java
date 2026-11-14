@@ -36,6 +36,7 @@ public class CorsConfig implements WebMvcConfigurer {
                     "/produtos", "/produtos/**",
                     "/pedidos", "/pedidos/**",
                     "/auth/admin/**",
+                    "/auditoria", "/auditoria/**",
                     "/auth/logout"
                 );
     }
