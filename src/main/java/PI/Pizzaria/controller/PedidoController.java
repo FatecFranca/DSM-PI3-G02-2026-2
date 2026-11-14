@@ -20,6 +20,7 @@ import PI.Pizzaria.dto.PedidoRequest;
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.model.Pedido;
 import PI.Pizzaria.service.PedidoService;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/pedidos")
@@ -40,6 +41,25 @@ public class PedidoController {
     public ResponseEntity<Pedido> atualizar(@PathVariable String id, @RequestBody PedidoRequest dados,
                                            @RequestAttribute("usuarioAutenticado") Colaborador usuario) {
         return ResponseEntity.ok(pedidoService.atualizar(id, dados, usuario));
+    }
+
+    @PutMapping("/admin/{id}")
+    public ResponseEntity<Pedido> atualizarComoAdministrador(
+        @PathVariable String id,
+        @RequestBody PedidoRequest dados,
+        @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
+
+    return ResponseEntity.ok(
+            pedidoService.atualizarComoAdministrador(id, dados, administrador));
+}
+
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<Void> excluirComoAdministrador(
+        @PathVariable String id,
+        @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
+
+    pedidoService.excluirComoAdministrador(id, administrador);
+    return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/finalizar")
