@@ -18,16 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  document.getElementById('nomeUsuario').textContent = `Olá, ${nomeDoUsuarioLogado()}`;
+  configurarCabecalho();
   document.getElementById('atendentePedido').textContent = `Atendente: ${nomeDoUsuarioLogado()}`;
   atualizarNumeroPedido();
-
-  document.getElementById('linkSair').addEventListener('click', async (evento) => {
-    evento.preventDefault();
-    try { await encerrarSessaoNoServidor(); } catch (_) {  }
-    localStorageEncerrarSessao();
-    window.location.href = 'index.html';
-  });
 
   configurarBuscaCliente();
   restaurarClienteRecemCadastrado();
@@ -913,7 +906,7 @@ function construirComprovante(pedido) {
   destino.appendChild(el('h1', { text: 'CITY PIZZAS' }));
   linha(`Pedido ${pedido.id}`);
   linha(`Data: ${new Date(pedido.criadoEm).toLocaleString('pt-BR')}`);
-  linha(`Atendente: ${pedido.colaboradorMatricula || '—'}`);
+  linha(`Atendente: ${nomeDoUsuarioLogado()}`);
   linha(`Cliente: ${clienteSelecionado?.nome || pedido.clienteId}`);
   linha(`Contato: ${formatarTelefone(pedido.telefoneContato)}`);
   destino.appendChild(el('hr'));

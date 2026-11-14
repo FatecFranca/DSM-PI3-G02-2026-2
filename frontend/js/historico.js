@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
     return;
   }
+  configurarCabecalho();
   const formulario = document.getElementById('formBuscarPedidosAbertos');
   formulario.addEventListener('submit', (evento) => {
     evento.preventDefault();
@@ -56,8 +57,7 @@ async function carregarPedidosAbertos(termo) {
       const meta = novoElemento('p', `${formatarData(p.criadoEm)} · Situação: ${p.situacao || 'EM_ABERTO'}`, 'pedido-aberto__meta');
       const dados = novoElemento('div');
       dados.append(
-        novoElemento('p', `Cliente: ${resumo.clienteNome || 'Não encontrado'} · ${formatarTelefone(resumo.clienteTelefone)}`),
-        novoElemento('p', `Atendente (matrícula): ${p.colaboradorMatricula || '—'}`)
+        novoElemento('p', `Cliente: ${resumo.clienteNome || 'Não encontrado'} · ${formatarTelefone(resumo.clienteTelefone)}`)
       );
       const itens = novoElemento('ul', null, 'pedido-aberto__itens');
       (p.itens || []).forEach(item => {
