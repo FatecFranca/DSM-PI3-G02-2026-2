@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import PI.Pizzaria.model.Auditoria;
 import PI.Pizzaria.model.Colaborador;
+import PI.Pizzaria.model.Pedido;
 import PI.Pizzaria.repository.AuditoriaRepository;
 
 @Service
@@ -60,6 +61,28 @@ public class AuditoriaService {
                         tipoRegistro,
                         registroId);
 
+        return auditoriaRepository.save(auditoria);
+    }
+
+    public Auditoria registrar(Colaborador usuario, String acao, String tipoRegistro,
+                              String registroId, String detalhes) {
+        Auditoria registro = registrar(usuario, acao, tipoRegistro, registroId);
+        registro.setDetalhes(detalhes);
+        return auditoriaRepository.save(registro);
+    }
+
+    public Auditoria registrarPedido(Colaborador usuario, String acao, Pedido pedido) {
+        return registrarPedido(usuario, acao, pedido, null);
+    }
+
+    public Auditoria registrarPedido(Colaborador usuario, String acao, Pedido pedido, String detalhes) {
+        if (pedido == null || pedido.getId() == null) {
+            throw new IllegalArgumentException("Pedido não identificado para auditoria.");
+        }
+        Auditoria auditoria = new Auditoria(usuario.getId(), usuario.getMatricula(),
+                acao, "PEDIDO", pedido.getId());
+        auditoria.setNumeroPedido(pedido.getNumero());
+        auditoria.setDetalhes(detalhes);
         return auditoriaRepository.save(auditoria);
     }
 

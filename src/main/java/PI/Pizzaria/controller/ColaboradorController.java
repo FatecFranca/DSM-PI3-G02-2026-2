@@ -18,6 +18,8 @@ import PI.Pizzaria.dto.ColaboradorRequestDTO;
 import PI.Pizzaria.dto.ColaboradorResponseDTO;
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.service.ColaboradorService;
+import PI.Pizzaria.service.AuditoriaService;
+import org.springframework.web.bind.annotation.RequestAttribute;
 
 @RestController 
 @RequestMapping("/colaboradores")
@@ -25,18 +27,22 @@ import PI.Pizzaria.service.ColaboradorService;
 public class ColaboradorController {
 
     private final ColaboradorService colaboradorService;
+    private final AuditoriaService auditoriaService;
 
-    public ColaboradorController(ColaboradorService colaboradorService) {
+    public ColaboradorController(ColaboradorService colaboradorService, AuditoriaService auditoriaService) {
         this.colaboradorService = colaboradorService;
+        this.auditoriaService = auditoriaService;
     }
 
     @PostMapping
     public ResponseEntity<ColaboradorResponseDTO> cadastrar(
-            @RequestBody ColaboradorRequestDTO dados) {
+            @RequestBody ColaboradorRequestDTO dados,
+            @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
 
         Colaborador colaborador = dados.toColaborador();
 
         Colaborador novoColaborador = colaboradorService.cadastrar(colaborador);
+        auditoriaService.registrar(administrador, "CRIACAO_COLABORADOR", "COLABORADOR", novoColaborador.getId(), novoColaborador.getNome());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ColaboradorResponseDTO(novoColaborador));
@@ -65,11 +71,13 @@ public class ColaboradorController {
     @PutMapping("/{id}")
     public ResponseEntity<ColaboradorResponseDTO> atualizar(
             @PathVariable String id,
-            @RequestBody ColaboradorRequestDTO dados) {
+            @RequestBody ColaboradorRequestDTO dados,
+            @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
 
         Colaborador colaborador = dados.toColaborador();
 
         Colaborador atualizado = colaboradorService.atualizar(id, colaborador);
+        auditoriaService.registrar(administrador, "ALTERACAO_COLABORADOR", "COLABORADOR", id, atualizado.getNome());
 
         return ResponseEntity.ok(
                 new ColaboradorResponseDTO(atualizado));
@@ -77,9 +85,12 @@ public class ColaboradorController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(
-            @PathVariable String id) {
+            @PathVariable String id,
+            @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
 
+        String nome = colaboradorService.buscarPorId(id).getNome();
         colaboradorService.excluir(id);
+        auditoriaService.registrar(administrador, "EXCLUSAO_COLABORADOR", "COLABORADOR", id, nome);
 
         return ResponseEntity.noContent().build();
     }

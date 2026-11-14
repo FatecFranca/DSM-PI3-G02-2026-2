@@ -53,7 +53,7 @@ async function carregarPedidosAbertos(termo) {
     resultados.forEach((resumo) => {
       const p = resumo.pedido;
       const cartao = montarCartao();
-      const titulo = novoElemento('strong', `Pedido ${p.id || '(sem ID)'}`);
+      const titulo = novoElemento('strong', rotuloPedido(p));
       const meta = novoElemento('p', `${formatarData(p.criadoEm)} · Situação: ${p.situacao || 'EM_ABERTO'}`, 'pedido-aberto__meta');
       const dados = novoElemento('div');
       dados.append(
@@ -102,7 +102,7 @@ async function carregarPedidosFinalizados(termo) {
         itens.appendChild(novoElemento('li', `${item.quantidade || 1} × ${nome || 'Produto'} — ${formatarMoeda(item.subtotal)}`));
       });
       cartao.append(
-        novoElemento('strong', `Pedido ${pedido.id}`),
+        novoElemento('strong', rotuloPedido(pedido)),
         novoElemento('p', `Finalizado em: ${formatarData(pedido.finalizadoEm)}`, 'pedido-aberto__meta'),
         novoElemento('p', `Cliente: ${clienteNome} · ${formatarTelefone(pedido.telefoneContato || clienteTelefone)}`),
         novoElemento('p', `Modalidade: ${pedido.modalidade === 'RETIRADA' ? 'Retirada' : 'Entrega'} · Pagamento: ${pedido.formaPagamento || '—'}`),
@@ -133,8 +133,15 @@ function carregarHistoricoLocal() {
   }
   historico.forEach(pedido => {
     const cartao = montarCartao();
+    const titulo = novoElemento('strong', rotuloPedido(pedido));
+    // O número salvo antigamente no navegador pode estar incorreto; consulta o MongoDB.
+    if (pedido.id) {
+      buscarPedidoPorId(pedido.id)
+        .then(registro => { titulo.textContent = rotuloPedido(registro); })
+        .catch(() => {});
+    }
     cartao.append(
-      novoElemento('strong', pedido.numero || pedido.id || 'Pedido'),
+      titulo,
       novoElemento('p', formatarData(pedido.criadoEm), 'pedido-aberto__meta'),
       novoElemento('p', `Cliente: ${pedido.cliente || '—'}`),
       novoElemento('p', `Modalidade: ${pedido.modalidade === 'ENTREGA' ? 'Entrega' : 'Retirada'}`),

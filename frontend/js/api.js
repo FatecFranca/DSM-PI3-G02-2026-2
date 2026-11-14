@@ -205,7 +205,26 @@ function consultarTaxaEntrega() {
 }
 
 function cancelarPedido(pedidoId) {
-  return requisitar(`/pedidos/${encodeURIComponent(pedidoId)}`, { method: 'DELETE' });
+  return requisitar(`/pedidos/admin/${encodeURIComponent(pedidoId)}`, { method: 'DELETE' });
+}
+
+function corrigirValorPedido(pedidoId, novoValorTotal, motivo) {
+  return requisitar(`/pedidos/admin/${encodeURIComponent(pedidoId)}/corrigir-valor`, {
+    method: 'PUT', body: JSON.stringify({ novoValorTotal, motivo }),
+  });
+}
+
+/** Identificação comercial: nunca exibir o ID técnico do MongoDB ao usuário. */
+function rotuloPedido(pedido) {
+  const numero = pedido?.numero;
+  if (Number.isSafeInteger(Number(numero)) && Number(numero) > 0 && String(numero).trim() !== '') {
+    return `Pedido ${Number(numero)}`;
+  }
+  // Compatibilidade com comprovantes impressos localmente em versões antigas.
+  if (typeof numero === 'string' && /^Pedido\s+[0-9]+$/i.test(numero.trim())) {
+    return `Pedido ${Number(numero.trim().split(/\s+/).pop())}`;
+  }
+  return 'Pedido antigo (sem numeração)';
 }
 
 /* ---------- Sessão local ---------- */

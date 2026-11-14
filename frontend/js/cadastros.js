@@ -146,17 +146,54 @@ function configurarFormularioCliente() {
 
 function configurarConsultaCep() {
   const campoCep = document.getElementById('cep');
+  const botao = document.getElementById('botaoBuscarCepCadastro');
+  const mensagem = document.getElementById('mensagemCepCadastro');
 
-  campoCep.addEventListener('blur', async () => {
-    const dados = await consultarCep(campoCep.value);
-    if (!dados) return;
-    const campoRua = document.getElementById('rua');
-    const campoBairro = document.getElementById('bairro');
-    const campoCidade = document.getElementById('cidade');
+  const buscar = async () => {
+    const digitado = somenteDigitos(campoCep.value);
+    if (digitado.length !== 8) {
+      mensagem.textContent = 'Digite um CEP válido com 8 números.';
+      mensagem.dataset.estado = 'erro';
+      campoCep.focus();
+      return;
+    }
+    botao.disabled = true;
+    botao.textContent = 'Buscando...';
+    mensagem.textContent = 'Consultando CEP, aguarde...';
+    mensagem.dataset.estado = 'info';
+    try {
+      const dados = await consultarCep(digitado);
+      if (somenteDigitos(campoCep.value) !== digitado) {
+        mensagem.textContent = 'O CEP foi alterado. Clique em Buscar CEP novamente.';
+        return;
+      }
+      if (!dados) {
+        mensagem.textContent = 'CEP não encontrado ou serviço indisponível. Preencha o endereço manualmente.';
+        mensagem.dataset.estado = 'erro';
+        return;
+      }
+      if (dados.rua) document.getElementById('rua').value = dados.rua;
+      if (dados.bairro) document.getElementById('bairro').value = dados.bairro;
+      if (dados.cidade) document.getElementById('cidade').value = dados.cidade;
+      mensagem.textContent = 'Endereço localizado! Confira a rua, o bairro e informe o número.';
+      mensagem.dataset.estado = 'sucesso';
+      document.getElementById('numero').focus();
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Buscar CEP';
+    }
+  };
 
-    if (!campoRua.value) campoRua.value = dados.rua || '';
-    if (!campoBairro.value) campoBairro.value = dados.bairro || '';
-    if (!campoCidade.value) campoCidade.value = dados.cidade || '';
+  botao.addEventListener('click', buscar);
+  campoCep.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Enter') {
+      evento.preventDefault();
+      if (!botao.disabled) buscar();
+    }
+  });
+  campoCep.addEventListener('input', () => {
+    mensagem.textContent = 'Clique em Buscar CEP para preencher o endereço.';
+    mensagem.dataset.estado = 'info';
   });
 }
 

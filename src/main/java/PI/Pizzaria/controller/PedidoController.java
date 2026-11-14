@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import PI.Pizzaria.dto.PedidoRequest;
+import PI.Pizzaria.dto.CorrecaoPedidoDTO;
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.model.Pedido;
 import PI.Pizzaria.service.PedidoService;
@@ -37,13 +38,17 @@ public class PedidoController {
     @PostMapping
     public ResponseEntity<Pedido> criar(@RequestBody PedidoRequest dados,
                                         @RequestAttribute("usuarioAutenticado") Colaborador usuario) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.criar(dados, usuario));
+        Pedido criado = pedidoService.criar(dados, usuario);
+        auditoriaService.registrarPedido(usuario, "CRIACAO_PEDIDO", criado);
+        return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Pedido> atualizar(@PathVariable String id, @RequestBody PedidoRequest dados,
                                            @RequestAttribute("usuarioAutenticado") Colaborador usuario) {
-        return ResponseEntity.ok(pedidoService.atualizar(id, dados, usuario));
+        Pedido atualizado = pedidoService.atualizar(id, dados, usuario);
+        auditoriaService.registrarPedido(usuario, "ALTERACAO_PEDIDO_ABERTO", atualizado);
+        return ResponseEntity.ok(atualizado);
     }
 
     @PutMapping("/admin/{id}")
@@ -53,7 +58,7 @@ public class PedidoController {
         @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
 
     Pedido atualizado = pedidoService.atualizarComoAdministrador(id, dados, administrador);
-    auditoriaService.registrar(administrador, "ALTERACAO_PEDIDO", "PEDIDO", id);
+    auditoriaService.registrarPedido(administrador, "ALTERACAO_PEDIDO", atualizado);
     return ResponseEntity.ok(atualizado);
 }
 
@@ -62,15 +67,31 @@ public class PedidoController {
         @PathVariable String id,
         @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
 
+    Pedido pedido = pedidoService.buscarPorId(id);
     pedidoService.excluirComoAdministrador(id, administrador);
-    auditoriaService.registrar(administrador, "EXCLUSAO_PEDIDO", "PEDIDO", id);
+    auditoriaService.registrarPedido(administrador, "EXCLUSAO_PEDIDO", pedido);
     return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/admin/{id}/corrigir-valor")
+    public ResponseEntity<Pedido> corrigirValorComoAdministrador(
+            @PathVariable String id, @RequestBody CorrecaoPedidoDTO dados,
+            @RequestAttribute("usuarioAutenticado") Colaborador administrador) {
+        Pedido anterior = pedidoService.buscarPorId(id);
+        BigDecimal valorAnterior = anterior.getTotal();
+        Pedido atualizado = pedidoService.corrigirValor(id, dados, administrador);
+        String motivo = dados.getMotivo().trim();
+        auditoriaService.registrarPedido(administrador, "CORRECAO_VALOR_PEDIDO", atualizado,
+                "De " + valorAnterior + " para " + atualizado.getTotal() + ". Motivo: " + motivo);
+        return ResponseEntity.ok(atualizado);
     }
 
     @PostMapping("/{id}/finalizar")
     public ResponseEntity<Pedido> finalizar(@PathVariable String id,
                                            @RequestAttribute("usuarioAutenticado") Colaborador usuario) {
-        return ResponseEntity.ok(pedidoService.finalizar(id, usuario));
+        Pedido finalizado = pedidoService.finalizar(id, usuario);
+        auditoriaService.registrarPedido(usuario, "FINALIZACAO_PEDIDO", finalizado);
+        return ResponseEntity.ok(finalizado);
     }
 
     @GetMapping("/taxa-entrega")

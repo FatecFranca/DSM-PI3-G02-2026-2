@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /** Pedido com dados persistidos das Sprints 3 e 4. */
@@ -12,6 +13,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Pedido {
     @Id
     private String id;
+    /** Número sequencial legível pelo atendente, diferente do ID interno do MongoDB. */
+    @Indexed(unique = true, sparse = true)
+    private Long numero;
     private String clienteId;
     private String colaboradorId;
     private String colaboradorMatricula;
@@ -40,6 +44,8 @@ public class Pedido {
     public void setFinalizadoEm(Instant finalizadoEm) { this.finalizadoEm = finalizadoEm; }
     public String getFinalizadoPorMatricula() { return finalizadoPorMatricula; }
     public void setFinalizadoPorMatricula(String finalizadoPorMatricula) { this.finalizadoPorMatricula = finalizadoPorMatricula; }
+    public Long getNumero() { return numero; }
+    public void setNumero(Long numero) { this.numero = numero; }
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getClienteId() { return clienteId; }

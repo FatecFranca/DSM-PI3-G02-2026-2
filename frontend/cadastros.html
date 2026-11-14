@@ -82,7 +82,11 @@
           <div class="campo__linha-tripla">
             <div class="campo">
               <label for="cep">CEP</label>
-              <input type="text" id="cep" name="cep" placeholder="00000-000" autocomplete="postal-code" />
+              <div class="cep__linha">
+                <input type="text" id="cep" name="cep" placeholder="00000-000" inputmode="numeric" maxlength="9" autocomplete="postal-code" aria-describedby="mensagemCepCadastro" />
+                <button type="button" class="botao botao--preto cep__botao" id="botaoBuscarCepCadastro">Buscar CEP</button>
+              </div>
+              <span class="cep__mensagem" id="mensagemCepCadastro" role="status" aria-live="polite">Informe o CEP e clique em Buscar CEP.</span>
             </div>
             <div class="campo">
               <label for="numero">Número</label>

@@ -271,10 +271,52 @@ function desenharPedidos(registros, lista, resumo, mensagem, recarregar) {
       abrir.href = `pedidos.html?pedido=${encodeURIComponent(pedido.id)}`;
       acoes.appendChild(abrir);
     }
+    const corrigir = criar('button', 'Corrigir valor', 'botao botao--contorno botao--pequeno');
+    corrigir.type = 'button';
+    const formularioCorrecao = criar('form', null, 'admin__correcao');
+    formularioCorrecao.hidden = true;
+    const campoValor = document.createElement('input');
+    campoValor.type = 'number';
+    campoValor.min = '0';
+    campoValor.step = '0.01';
+    campoValor.required = true;
+    campoValor.value = Number(pedido.total || 0).toFixed(2);
+    campoValor.setAttribute('aria-label', `Novo valor total de ${rotuloPedido(pedido)}`);
+    const campoMotivo = document.createElement('input');
+    campoMotivo.type = 'text';
+    campoMotivo.required = true;
+    campoMotivo.maxLength = 200;
+    campoMotivo.placeholder = 'Motivo da correção (obrigatório)';
+    campoMotivo.setAttribute('aria-label', 'Motivo da correção');
+    const salvarCorrecao = criar('button', 'Salvar correção', 'botao botao--preto botao--pequeno');
+    salvarCorrecao.type = 'submit';
+    formularioCorrecao.append(campoValor, campoMotivo, salvarCorrecao);
+    corrigir.addEventListener('click', () => {
+      formularioCorrecao.hidden = !formularioCorrecao.hidden;
+      if (!formularioCorrecao.hidden) campoValor.focus();
+    });
+    formularioCorrecao.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      const novoValor = Number(campoValor.value);
+      if (!Number.isFinite(novoValor) || novoValor < 0 || !campoMotivo.value.trim()) {
+        mostrarMensagem(mensagem, 'Informe um total válido e o motivo da correção.', 'erro');
+        return;
+      }
+      salvarCorrecao.disabled = true;
+      try {
+        await corrigirValorPedido(pedido.id, novoValor, campoMotivo.value.trim());
+        recarregar();
+      } catch (erro) {
+        mostrarMensagem(mensagem, `Não foi possível corrigir o valor: ${erro.message}`, 'erro');
+      } finally {
+        salvarCorrecao.disabled = false;
+      }
+    });
+    acoes.appendChild(corrigir);
     const excluir = criar('button', 'Excluir pedido', 'botao botao--vermelho botao--pequeno');
     excluir.type = 'button';
     excluir.addEventListener('click', async () => {
-      if (!confirm(`Excluir o pedido ${pedido.id}? Esta ação não pode ser desfeita.`)) return;
+      if (!confirm(`Excluir ${rotuloPedido(pedido)}? Esta ação não pode ser desfeita.`)) return;
       try {
         await cancelarPedido(pedido.id);
         recarregar();
@@ -285,14 +327,15 @@ function desenharPedidos(registros, lista, resumo, mensagem, recarregar) {
     acoes.appendChild(excluir);
 
     cartao.append(
-      criar('strong', `Pedido ${pedido.id}`),
+      criar('strong', rotuloPedido(pedido)),
       criar('p', `${registro.aberto ? 'Em aberto' : 'Finalizado'} · ${dataHora(pedido.finalizadoEm || pedido.criadoEm)}`, 'pedido-aberto__meta'),
       criar('p', `Cliente: ${clienteNome || '—'} · ${formatarTelefone(pedido.telefoneContato || clienteTelefone)}`),
       criar('p', `Atendente (matrícula): ${pedido.colaboradorMatricula || '—'}`),
       criar('p', `Modalidade: ${pedido.modalidade === 'RETIRADA' ? 'Retirada' : 'Entrega'} · Pagamento: ${pedido.formaPagamento || '—'}`),
       itens,
       criar('p', `Total: ${pedido.total == null ? 'pendente' : moeda(pedido.total)}`, 'admin__total'),
-      acoes
+      acoes,
+      formularioCorrecao
     );
     lista.appendChild(cartao);
   });
@@ -329,7 +372,7 @@ function configurarAuditoria() {
         : `${lista.length} registro(s).`, 'info');
       lista.slice(0, LIMITE_RESULTADOS).forEach((registro) => {
         const linha = criar('tr');
-        linha.append(criar('td', dataHora(registro.dataHora)), criar('td', registro.usuario), criar('td', registro.acao), criar('td', registro.registro));
+        linha.append(criar('td', dataHora(registro.dataHora)), criar('td', registro.usuario), criar('td', registro.acao), criar('td', registro.detalhes ? `${registro.registro} — ${registro.detalhes}` : registro.registro));
         corpo.appendChild(linha);
       });
       tabela.hidden = false;
@@ -352,5 +395,6 @@ function normalizarAuditoria(registro) {
     usuario: registro.usuarioNome || registro.usuarioResponsavelNome || registro.usuarioResponsavel || registro.usuario || '—',
     acao: registro.acao || '—',
     registro: registro.registroAfetado || registro.registro || '—',
+    detalhes: registro.detalhes || '',
   };
 }
