@@ -14,15 +14,21 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import PI.Pizzaria.model.Auditoria;
+import PI.Pizzaria.model.Pedido;
+import PI.Pizzaria.repository.PedidoRepository;
+import java.util.Map;
+import java.util.stream.Collectors;
 import PI.Pizzaria.service.AuditoriaService;
 
 @RestController
 @RequestMapping("/auditoria")
 public class AuditoriaController {
     private final AuditoriaService auditoriaService;
+    private final PedidoRepository pedidoRepository;
 
-    public AuditoriaController(AuditoriaService auditoriaService) {
+    public AuditoriaController(AuditoriaService auditoriaService, PedidoRepository pedidoRepository) {
         this.auditoriaService = auditoriaService;
+        this.pedidoRepository = pedidoRepository;
     }
 
     @GetMapping
@@ -36,6 +42,9 @@ public class AuditoriaController {
             throw new IllegalArgumentException("A data inicial não pode ser posterior à final.");
         }
         String filtro = termo.trim().toLowerCase(Locale.ROOT);
+        Map<String, Long> numerosAntigos = pedidoRepository.findAll().stream()
+                .filter(p -> p.getId() != null && p.getNumero() != null)
+                .collect(Collectors.toMap(Pedido::getId, Pedido::getNumero, (a, b) -> a));
         return auditoriaService.listarMaisRecentes().stream()
                 .filter(a -> a.getDataHora() != null)
                 .filter(a -> inicio == null || !a.getDataHora().isBefore(inicio.atStartOfDay().toInstant(ZoneOffset.UTC)))
@@ -44,11 +53,23 @@ public class AuditoriaController {
                         || contem(a.getUsuarioMatricula(), filtro)
                         || contem(a.getAcao(), filtro)
                         || contem(a.getTipoRegistro(), filtro)
-                        || contem(a.getRegistroId(), filtro))
+                        || contem(a.getRegistroId(), filtro)
+                        || contem(rotuloRegistro(a, numerosAntigos), filtro))
                 .map(a -> new RegistroAuditoria(a.getDataHora(),
                         a.getUsuarioMatricula(), a.getAcao(),
-                        a.getTipoRegistro() + " #" + a.getRegistroId()))
+                        rotuloRegistro(a, numerosAntigos), a.getDetalhes()))
                 .toList();
+    }
+
+    private String rotuloRegistro(Auditoria registro, Map<String, Long> numerosAntigos) {
+        if ("PEDIDO".equalsIgnoreCase(registro.getTipoRegistro())) {
+            Long numero = registro.getNumeroPedido() != null
+                    ? registro.getNumeroPedido() : numerosAntigos.get(registro.getRegistroId());
+            return numero == null ? "Pedido antigo/excluído (sem número registrado)" : "Pedido " + numero;
+        }
+        if ("PRODUTO".equalsIgnoreCase(registro.getTipoRegistro())) return "Produto";
+        if ("COLABORADOR".equalsIgnoreCase(registro.getTipoRegistro())) return "Colaborador";
+        return registro.getTipoRegistro();
     }
 
     private LocalDate lerData(String valor) {
@@ -65,5 +86,5 @@ public class AuditoriaController {
     }
 
     public record RegistroAuditoria(java.time.Instant dataHora, String usuario,
-                                   String acao, String registro) {}
+                                   String acao, String registro, String detalhes) {}
 }

@@ -25,6 +25,10 @@ public class Auditoria {
     @Indexed
     private String registroId;
 
+    /** Número humano preservado mesmo após exclusão do pedido. */
+    private Long numeroPedido;
+    private String detalhes;
+
     @Indexed
     private Instant dataHora;
 
@@ -65,6 +69,11 @@ public class Auditoria {
     public String getTipoRegistro() {
         return tipoRegistro;
     }
+
+    public Long getNumeroPedido() { return numeroPedido; }
+    public void setNumeroPedido(Long numeroPedido) { this.numeroPedido = numeroPedido; }
+    public String getDetalhes() { return detalhes; }
+    public void setDetalhes(String detalhes) { this.detalhes = detalhes; }
 
     public String getRegistroId() {
         return registroId;

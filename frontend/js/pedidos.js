@@ -167,7 +167,7 @@ async function abrirPedidoDaUrl(id = new URLSearchParams(window.location.search)
     const cliente = await buscarClientePorId(pedido.clienteId);
     selecionarCliente(cliente);
     pedidoEmEdicaoId = pedido.id;
-    document.getElementById('numeroPedido').textContent = `pedido ${pedido.id}`;
+    document.getElementById('numeroPedido').textContent = rotuloPedido(pedido);
     itensPedido = (pedido.itens || []).map((salvo) => {
       const produto = catalogoProdutos.find((p) => String(p.id) === String(salvo.produtoId));
       const segundoProduto = salvo.segundoProdutoId
@@ -192,7 +192,7 @@ async function abrirPedidoDaUrl(id = new URLSearchParams(window.location.search)
     document.getElementById('observacaoGeral').value = pedido.observacaoGeral || '';
     atualizarCamposModalidade();
     renderizarItens();
-    mostrarSucesso(`Pedido ${pedido.id} reaberto para edição. Salve as alterações ou finalize quando estiver pronto.`);
+    mostrarSucesso(`${rotuloPedido(pedido)} reaberto para edição. Salve as alterações ou finalize quando estiver pronto.`);
   } catch (erro) {
     mostrarErro(`Não foi possível reabrir o pedido: ${erro.message}`);
     pedidoEmEdicaoId = null;
@@ -644,18 +644,51 @@ function criarAcrescimos(item) {
 function configurarModalidade() {
   document.getElementById('selectModalidade').addEventListener('change', atualizarCamposModalidade);
   const cep = document.getElementById('endCep');
-  cep.addEventListener('blur', async () => {
+  const botao = document.getElementById('botaoBuscarCepPedido');
+  const mensagem = document.getElementById('mensagemCepPedido');
+  const buscar = async () => {
     const digitado = somenteDigitos(cep.value);
-    if (!digitado) return;
     if (digitado.length !== 8) {
-      mostrarErro('O CEP deve conter 8 dígitos. Você também pode preencher o endereço manualmente.');
+      mensagem.textContent = 'Digite um CEP válido com 8 números.';
+      mensagem.dataset.estado = 'erro';
+      cep.focus();
       return;
     }
-    const endereco = await consultarCep(digitado);
-
-    if (!endereco || somenteDigitos(cep.value) !== digitado) return;
-    [['endRua', endereco.rua], ['endBairro', endereco.bairro], ['endCidade', endereco.cidade]]
-      .forEach(([id, valor]) => { if (valor) document.getElementById(id).value = valor; });
+    botao.disabled = true;
+    botao.textContent = 'Buscando...';
+    mensagem.textContent = 'Consultando CEP, aguarde...';
+    mensagem.dataset.estado = 'info';
+    try {
+      const endereco = await consultarCep(digitado);
+      if (somenteDigitos(cep.value) !== digitado) {
+        mensagem.textContent = 'O CEP mudou. Clique em Buscar CEP novamente.';
+        return;
+      }
+      if (!endereco) {
+        mensagem.textContent = 'CEP não encontrado ou serviço indisponível. Preencha o endereço manualmente.';
+        mensagem.dataset.estado = 'erro';
+        return;
+      }
+      [['endRua', endereco.rua], ['endBairro', endereco.bairro], ['endCidade', endereco.cidade]]
+        .forEach(([id, valor]) => { if (valor) document.getElementById(id).value = valor; });
+      mensagem.textContent = 'Endereço localizado! Confira os dados e informe o número.';
+      mensagem.dataset.estado = 'sucesso';
+      document.getElementById('endNumero').focus();
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Buscar CEP';
+    }
+  };
+  botao.addEventListener('click', buscar);
+  cep.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Enter') {
+      evento.preventDefault();
+      if (!botao.disabled) buscar();
+    }
+  });
+  cep.addEventListener('input', () => {
+    mensagem.textContent = 'Clique em Buscar CEP para preencher o endereço.';
+    mensagem.dataset.estado = 'info';
   });
   atualizarCamposModalidade();
 }
@@ -784,7 +817,7 @@ async function persistirPedidoAtual() {
       ? await atualizarPedido(pedidoEmEdicaoId, montarPayloadPedido())
       : await criarPedido(montarPayloadPedido());
     pedidoEmEdicaoId = resultado.id;
-    document.getElementById('numeroPedido').textContent = `pedido ${resultado.id}`;
+    document.getElementById('numeroPedido').textContent = rotuloPedido(resultado);
     window.history.replaceState({}, '', `pedidos.html?pedido=${encodeURIComponent(resultado.id)}`);
 
     const totalServidor = Number(resultado.total);
@@ -808,7 +841,7 @@ async function persistirPedidoAtual() {
 
 async function salvarComoAberto() {
   const pedido = await persistirPedidoAtual();
-  if (pedido) mostrarSucesso(`Pedido ${pedido.id} salvo em aberto. Você pode reabri-lo em "Pedidos anteriores".`);
+  if (pedido) mostrarSucesso(`${rotuloPedido(pedido)} salvo em aberto. Você pode reabri-lo em "Pedidos anteriores".`);
 }
 
 /* ---------- Popup de finalização ---------- */
@@ -865,7 +898,7 @@ async function iniciarImpressao() {
         } },
         { rotulo: 'Não, manter em aberto', acao: () => {
           fecharPopup();
-          mostrarSucesso(`Pedido ${pedido.id} continua em aberto para reimpressão ou edição.`);
+          mostrarSucesso(`${rotuloPedido(pedido)} continua em aberto para reimpressão ou edição.`);
         } },
       ]);
   }, { once: true });
@@ -880,7 +913,7 @@ async function concluirPedido(pedidoSalvo, foiImpresso) {
     const finalizado = await finalizarPedido(pedidoSalvo.id);
     if (foiImpresso) salvarPedidoNoHistoricoLocal(registroHistorico(finalizado));
     reiniciarPedido();
-    mostrarSucesso(`Pedido ${finalizado.id} finalizado com sucesso${foiImpresso ? ' e marcado como impresso' : ' sem impressão'}. Total: ${formatarMoeda(finalizado.total)}.`);
+    mostrarSucesso(`${rotuloPedido(finalizado)} finalizado com sucesso${foiImpresso ? ' e marcado como impresso' : ' sem impressão'}. Total: ${formatarMoeda(finalizado.total)}.`);
   } catch (erro) {
     if (erro.status === 401) return sessaoExpirada();
     mostrarErro(`Não foi possível finalizar: ${erro.message}. O pedido permanece disponível para consulta.`);
@@ -890,7 +923,7 @@ async function concluirPedido(pedidoSalvo, foiImpresso) {
 /* ---------- Histórico local e comprovante de impressão ---------- */
 function registroHistorico(pedido) {
   return {
-    id: pedido.id, numero: `Pedido ${pedido.id}`, cliente: clienteSelecionado?.nome,
+    id: pedido.id, numero: pedido.numero, cliente: clienteSelecionado?.nome,
     modalidade: pedido.modalidade, total: pedido.total, atendente: nomeDoUsuarioLogado(),
     criadoEm: pedido.criadoEm, itens: (pedido.itens || []).map((item) => ({
       nome: item.meioAMeio ? `${item.nomeProduto} + ${item.segundoSabor}` : item.nomeProduto,
@@ -904,7 +937,7 @@ function construirComprovante(pedido) {
   destino.replaceChildren();
   const linha = (texto) => destino.appendChild(el('p', { text: texto }));
   destino.appendChild(el('h1', { text: 'CITY PIZZAS' }));
-  linha(`Pedido ${pedido.id}`);
+  linha(rotuloPedido(pedido));
   linha(`Data: ${new Date(pedido.criadoEm).toLocaleString('pt-BR')}`);
   linha(`Atendente: ${nomeDoUsuarioLogado()}`);
   linha(`Cliente: ${clienteSelecionado?.nome || pedido.clienteId}`);
@@ -953,18 +986,10 @@ function salvarPedidoNoHistoricoLocal(pedido) {
 
 /* ---------- Utilidades ---------- */
 
-function numeroAtualPedido() {
-  const atual = Number(localStorage.getItem('cityPizzas_ultimoPedido') || '0') + 1;
-  return String(atual).padStart(3, '0');
-}
-
 function atualizarNumeroPedido() {
-  document.getElementById('numeroPedido').textContent = `pedido ${numeroAtualPedido()}`;
-}
-
-function confirmarNumeroPedido() {
-  const atual = Number(localStorage.getItem('cityPizzas_ultimoPedido') || '0') + 1;
-  localStorage.setItem('cityPizzas_ultimoPedido', String(atual));
+  // O número definitivo é atribuído pelo servidor no momento do primeiro salvamento.
+  // Não usar localStorage: ele não sincroniza entre os computadores da pizzaria.
+  document.getElementById('numeroPedido').textContent = 'Novo pedido (nº ao salvar)';
 }
 
 function formatarMoeda(valor) {

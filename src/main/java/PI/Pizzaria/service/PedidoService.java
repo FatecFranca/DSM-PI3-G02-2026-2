@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import PI.Pizzaria.dto.ItemPedidoRequest;
 import PI.Pizzaria.dto.PedidoRequest;
+import PI.Pizzaria.dto.CorrecaoPedidoDTO;
 import PI.Pizzaria.model.Colaborador;
 import PI.Pizzaria.model.ItemPedido;
 import PI.Pizzaria.model.Pedido;
@@ -35,6 +36,7 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final ClienteRepository clienteRepository;
     private final ProdutoRepository produtoRepository;
+    private final NumeracaoPedidoService numeracaoPedidoService;
     private final String precoBaseConfigurado;
     private final String precoPreAssadaConfigurado;
     private final String taxaEntregaConfigurada;
@@ -45,6 +47,7 @@ public class PedidoService {
             PedidoRepository pedidoRepository,
             ClienteRepository clienteRepository,
             ProdutoRepository produtoRepository,
+            NumeracaoPedidoService numeracaoPedidoService,
             @Value("${app.pizza.preco-base:}") String precoBaseConfigurado,
             @Value("${app.pizza.preco-pre-assada:}") String precoPreAssadaConfigurado,
             @Value("${app.pedido.taxa-entrega:}") String taxaEntregaConfigurada) {
@@ -52,6 +55,7 @@ public class PedidoService {
         this.pedidoRepository = pedidoRepository;
         this.clienteRepository = clienteRepository;
         this.produtoRepository = produtoRepository;
+        this.numeracaoPedidoService = numeracaoPedidoService;
         this.precoBaseConfigurado = precoBaseConfigurado;
         this.precoPreAssadaConfigurado = precoPreAssadaConfigurado;
         this.taxaEntregaConfigurada = taxaEntregaConfigurada;
@@ -66,6 +70,7 @@ public class PedidoService {
         pedido.setCriadoEm(Instant.now());
         pedido.setSituacao("EM_ABERTO");
         aplicarDados(pedido, dados);
+        pedido.setNumero(numeracaoPedidoService.proximoNumero());
         return pedidoRepository.save(pedido);
     }
 
@@ -75,6 +80,7 @@ public class PedidoService {
         Pedido pedido = buscarPorId(id);
         exigirAberto(pedido);
         aplicarDados(pedido, dados);
+        // Ao editar/reabrir, mantém o mesmo número comercial do pedido.
         return pedidoRepository.save(pedido);
     }
 
@@ -87,6 +93,25 @@ public class PedidoService {
     aplicarDados(pedido, dados);
 
     return pedidoRepository.save(pedido);
+    }
+
+    /** Permite correção administrativa com justificativa, sem mudar os itens da venda. */
+    public Pedido corrigirValor(String id, CorrecaoPedidoDTO dados, Colaborador administrador) {
+        validarAdministrador(administrador);
+        if (dados == null || dados.getNovoValorTotal() == null) {
+            throw new IllegalArgumentException("Informe o novo valor total do pedido.");
+        }
+        if (dados.getMotivo() == null || dados.getMotivo().isBlank()
+                || dados.getMotivo().trim().length() > 200) {
+            throw new IllegalArgumentException("Informe um motivo de até 200 caracteres para a correção.");
+        }
+        BigDecimal valor = dados.getNovoValorTotal();
+        if (valor.scale() > 2 || valor.signum() < 0 || valor.compareTo(new BigDecimal("999999.99")) > 0) {
+            throw new IllegalArgumentException("Informe um valor válido com até duas casas decimais.");
+        }
+        Pedido pedido = buscarPorId(id);
+        pedido.setTotal(valor.setScale(2));
+        return pedidoRepository.save(pedido);
     }
 
     /** Finalização explícita — imprimir por si só não confirma impressão física. */
@@ -510,11 +535,22 @@ public class PedidoService {
                     cliente != null ? cliente.getTelefone() : "");
         }).filter(resumo -> consulta.isEmpty()
                 || contem(resumo.pedido().getId(), consulta)
+                || correspondeNumero(resumo.pedido(), consulta)
                 || contem(resumo.pedido().getClienteId(), consulta)
                 || contem(resumo.pedido().getColaboradorMatricula(), consulta)
                 || contem(resumo.clienteNome(), consulta)
                 || contem(resumo.clienteTelefone(), consulta))
                 .collect(Collectors.toList());
+    }
+
+    private boolean correspondeNumero(Pedido pedido, String consulta) {
+        if (pedido.getNumero() == null) return false;
+        String numeroConsultado = consulta.replaceFirst("^pedido\\s*#?\\s*", "");
+        if (numeroConsultado.matches("[0-9]+")) {
+            try { return pedido.getNumero().equals(Long.parseLong(numeroConsultado)); }
+            catch (NumberFormatException erro) { return false; }
+        }
+        return contem("pedido " + pedido.getNumero(), consulta);
     }
 
     private boolean contem(String valor, String termo) {

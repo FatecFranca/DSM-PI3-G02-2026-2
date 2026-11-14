@@ -27,7 +27,7 @@
     <div class="pedido__topo">
       <div style="width:70px;"></div>
       <div class="pedido__identificacao">
-        <div class="pedido__numero" id="numeroPedido">pedido 001</div>
+        <div class="pedido__numero" id="numeroPedido" aria-live="polite">Novo pedido (nº ao salvar)</div>
         <div class="pedido__cliente">
           <span id="nomeCliente">Cliente não selecionado</span>
           <button type="button" id="botaoTrocarCliente">buscar/trocar</button>
@@ -99,7 +99,11 @@
         </div>
         <div class="campo" style="margin:0;">
           <label for="endCep">CEP (opcional)</label>
-          <input type="text" id="endCep" placeholder="14400-000" inputmode="numeric" maxlength="9" />
+          <div class="cep__linha">
+            <input type="text" id="endCep" placeholder="14400-000" inputmode="numeric" maxlength="9" aria-describedby="mensagemCepPedido" />
+            <button type="button" class="botao botao--preto cep__botao" id="botaoBuscarCepPedido">Buscar CEP</button>
+          </div>
+          <span class="cep__mensagem" id="mensagemCepPedido" role="status" aria-live="polite">Informe o CEP e clique em Buscar CEP.</span>
         </div>
         <div class="campo" style="margin:0;">
           <label for="endComplemento">Complemento (opcional)</label>

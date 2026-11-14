@@ -28,6 +28,7 @@ class PedidoServiceTest {
     private PedidoRepository pedidoRepository;
     private ClienteRepository clienteRepository;
     private ProdutoRepository produtoRepository;
+    private NumeracaoPedidoService numeracaoPedidoService;
     private PedidoService service;
     private Colaborador atendente;
 
@@ -37,11 +38,14 @@ class PedidoServiceTest {
         pedidoRepository = mock(PedidoRepository.class);
         clienteRepository = mock(ClienteRepository.class);
         produtoRepository = mock(ProdutoRepository.class);
+        numeracaoPedidoService = mock(NumeracaoPedidoService.class);
+        when(numeracaoPedidoService.proximoNumero()).thenReturn(1L);
 
         service = new PedidoService(
                 pedidoRepository,
                 clienteRepository,
                 produtoRepository,
+                numeracaoPedidoService,
                 "59.00",
                 "",
                 "7.00");
@@ -156,7 +160,7 @@ class PedidoServiceTest {
     @Test
     void configuracaoSeparadaDePreAssadaNaoFazMediaDosSabores() {
         PedidoService comPrecoPreAssada = new PedidoService(
-                pedidoRepository, clienteRepository, produtoRepository,
+                pedidoRepository, clienteRepository, produtoRepository, numeracaoPedidoService,
                 "59.00", "49.00", "7.00");
         ItemPedidoRequest metade = item("pizza-1");
         metade.setMeioAMeio(true);
@@ -188,6 +192,47 @@ class PedidoServiceTest {
         Pedido pedido = service.criar(requisicao(metade), atendente);
         assertEquals(new BigDecimal("69.00"), pedido.getItens().get(0).getPrecoUnitario());
         assertEquals(new BigDecimal("138.00"), pedido.getSubtotalItens());
+    }
+
+    @Test
+    void numeroDoPedidoPermaneceIgualQuandoEditado() {
+        Pedido existente = new Pedido();
+        existente.setId("id-mongo-1");
+        existente.setNumero(26L);
+        existente.setSituacao("EM_ABERTO");
+        when(pedidoRepository.findById("id-mongo-1")).thenReturn(Optional.of(existente));
+
+        Pedido atualizado = service.atualizar("id-mongo-1", requisicao(item("pizza-1")), atendente);
+        assertEquals(26L, atualizado.getNumero());
+        verify(numeracaoPedidoService, never()).proximoNumero();
+        verify(pedidoRepository).save(existente);
+    }
+
+    @Test
+    void numeroDoPedidoNovoVemDoContadorDoBanco() {
+        when(numeracaoPedidoService.proximoNumero()).thenReturn(27L);
+        Pedido criado = service.criar(requisicao(item("pizza-1")), atendente);
+        assertEquals(27L, criado.getNumero());
+        verify(numeracaoPedidoService).proximoNumero();
+    }
+
+    @Test
+    void somenteAdministradorCorrigeValoresComMotivo() {
+        Pedido existente = new Pedido();
+        existente.setId("id-mongo-1");
+        existente.setNumero(6L);
+        existente.setTotal(new BigDecimal("100.00"));
+        when(pedidoRepository.findById("id-mongo-1")).thenReturn(Optional.of(existente));
+        PI.Pizzaria.dto.CorrecaoPedidoDTO pedidoCorrigido = new PI.Pizzaria.dto.CorrecaoPedidoDTO();
+        pedidoCorrigido.setNovoValorTotal(new BigDecimal("90.00"));
+        pedidoCorrigido.setMotivo("Ajuste de valor negociado");
+
+        assertThrows(ResponseStatusException.class,
+                () -> service.corrigirValor("id-mongo-1", pedidoCorrigido, atendente));
+        atendente.setPerfil(Colaborador.Perfil.administrador);
+        Pedido corrigido = service.corrigirValor("id-mongo-1", pedidoCorrigido, atendente);
+        assertEquals(new BigDecimal("90.00"), corrigido.getTotal());
+        assertEquals(6L, corrigido.getNumero());
     }
 
     @Test
@@ -291,6 +336,7 @@ class PedidoServiceTest {
                         pedidoRepository,
                         clienteRepository,
                         produtoRepository,
+                        numeracaoPedidoService,
                         "",
                         "",
                         "7.00");
@@ -326,7 +372,7 @@ class PedidoServiceTest {
     @Test
     void entregaSemTaxaConfiguradaNaoFingeSerGratuita() {
         PedidoService semTaxa = new PedidoService(pedidoRepository, clienteRepository,
-                produtoRepository, "59.00", "", "");
+                produtoRepository, numeracaoPedidoService, "59.00", "", "");
         PedidoRequest requisicao = requisicao(item("pizza-1"));
         requisicao.setModalidade("ENTREGA");
         Endereco e = new Endereco();
