@@ -8,6 +8,7 @@ public class Endereco {
     private String bairro;
     private String complemento;
     private String cidade;
+    private String uf;
 
     public Endereco() {
     }
@@ -29,4 +30,7 @@ public class Endereco {
 
     public String getCidade() { return cidade; }
     public void setCidade(String cidade) { this.cidade = cidade; }
+
+    public String getUf() { return uf; }
+    public void setUf(String uf) { this.uf = uf; }
 }

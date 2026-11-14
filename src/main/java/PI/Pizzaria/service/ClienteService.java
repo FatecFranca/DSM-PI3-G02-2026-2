@@ -76,11 +76,24 @@ public class ClienteService {
                 throw new IllegalArgumentException("E-mail do cliente inválido.");
             cliente.setEmail(cliente.getEmail().trim().toLowerCase());
         }
+
         Endereco endereco = cliente.getEndereco();
+        if (endereco == null) {
+        throw new IllegalArgumentException("O endereço é obrigatório.");
+        }
+
         if (endereco == null || endereco.getRua() == null || endereco.getRua().isBlank()
                 || endereco.getNumero() == null || endereco.getNumero().isBlank()
                 || endereco.getBairro() == null || endereco.getBairro().isBlank())
             throw new IllegalArgumentException("Rua, número e bairro são obrigatórios.");
+
+        if (endereco.getCep() != null && !endereco.getCep().isBlank()) {
+        String cep = endereco.getCep().replaceAll("\\D", "");
+
+        if (!cep.matches("\\d{8}"))
+        throw new IllegalArgumentException("CEP inválido.");
+
+         endereco.setCep(cep);}
     }
 
     private boolean cpfValido(String cpf) {

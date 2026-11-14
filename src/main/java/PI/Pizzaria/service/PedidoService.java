@@ -82,7 +82,14 @@ public class PedidoService {
     public Pedido finalizar(String id, Colaborador atendente) {
         validarAtendente(atendente);
         Pedido pedido = buscarPorId(id);
+        
         exigirAberto(pedido);
+        if (pedido.getFormaPagamento() == null
+        || !List.of("DINHEIRO", "PIX", "CREDITO", "DEBITO")
+                .contains(pedido.getFormaPagamento())) {
+        throw new IllegalArgumentException("Selecione uma forma de pagamento válida antes de finalizar.");
+        }
+
         if (pedido.getItens() == null || pedido.getItens().isEmpty()) {
             throw new IllegalArgumentException("Pedido sem itens não pode ser finalizado.");
         }
@@ -97,6 +104,8 @@ public class PedidoService {
     }
 
     private void exigirAberto(Pedido pedido) {
+        
+
         if (!"EM_ABERTO".equals(pedido.getSituacao())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Este pedido já foi finalizado e não pode mais ser alterado.");
