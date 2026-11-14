@@ -3,9 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
     return;
   }
-  configurarSaida();
+  configurarCabecalho();
   configurarBuscaClientes();
-  configurarCadastroColaborador();
   configurarCadastroProdutos();
   configurarAbas();
   configurarFormularioCliente();
@@ -18,7 +17,6 @@ function configurarAbas() {
   const botoesAba = document.querySelectorAll('.cadastro__aba');
   const conteudos = {
     cliente: document.getElementById('abaCliente'),
-    colaborador: document.getElementById('abaColaborador'),
     produto: document.getElementById('abaProduto'),
   };
 
@@ -75,7 +73,7 @@ function configurarFormularioCliente() {
       const criado = await cadastrarCliente(dadosCliente);
 
       if (veioDoPedido && criado && criado.id) {
-        sessionStorage.setItem('cityPizzas_clienteSelecionado', JSON.stringify(criado));
+        sessionStorage.setItem('cityPizzas_clienteSelecionado', JSON.stringify(dadosMinimosDoCliente(criado)));
         window.location.href = 'pedidos.html';
         return;
       }
@@ -191,7 +189,7 @@ function configurarBuscaClientes() {
         botao.className = 'botao botao--contorno';
         botao.textContent = 'Selecionar';
         botao.addEventListener('click', () => {
-          sessionStorage.setItem('cityPizzas_clienteSelecionado', JSON.stringify(cliente));
+          sessionStorage.setItem('cityPizzas_clienteSelecionado', JSON.stringify(dadosMinimosDoCliente(cliente)));
           window.location.href = 'pedidos.html';
         });
         item.append(texto, botao);
@@ -200,77 +198,5 @@ function configurarBuscaClientes() {
     } catch (erro) {
       resultados.textContent = erro.message || 'Não foi possível buscar clientes.';
     }
-  });
-}
-
-/* ---------- Colaboradores (PB03, PB04; administrador) ---------- */
-function configurarCadastroColaborador() {
-  const aba = document.querySelector('[data-aba="colaborador"]');
-  if (!usuarioEhAdministrador()) {
-    aba.style.display = 'none';
-    return;
-  }
-
-  document.getElementById('bloqueioColaborador').style.display = 'none';
-  document.getElementById('conteudoColaboradorAdmin').style.display = 'block';
-  const mensagem = document.getElementById('mensagemColaborador');
-  const form = document.getElementById('formColaborador');
-  const formSenha = document.getElementById('formSenhaAdmin');
-  const seletor = document.getElementById('colaboradorSenhaId');
-
-  async function atualizarLista() {
-    const colaboradores = await listarColaboradores();
-    seletor.replaceChildren();
-    colaboradores.forEach((colaborador) => {
-      const opcao = document.createElement('option');
-      opcao.value = colaborador.id;
-      opcao.textContent = `${colaborador.nome} (${colaborador.matricula})`;
-      seletor.appendChild(opcao);
-    });
-  }
-
-  form.addEventListener('submit', async (evento) => {
-    evento.preventDefault();
-    mensagem.textContent = '';
-    const dados = {
-      nome: document.getElementById('colNome').value.trim(),
-      matricula: document.getElementById('colMatricula').value.trim(),
-      email: document.getElementById('colEmail').value.trim(),
-      senha: document.getElementById('colSenha').value,
-      perfil: document.getElementById('colPerfil').value,
-    };
-    try {
-      await cadastrarColaborador(dados);
-      mensagem.textContent = 'Colaborador cadastrado com sucesso.';
-      form.reset();
-      await atualizarLista();
-    } catch (erro) { mensagem.textContent = erro.message; }
-  });
-
-  formSenha.addEventListener('submit', async (evento) => {
-    evento.preventDefault();
-    mensagem.textContent = '';
-    const id = seletor.value;
-    const senha = document.getElementById('senhaAdminNova').value;
-    if (!id || senha.length < 8) {
-      mensagem.textContent = 'Selecione um colaborador e informe uma senha de pelo menos 8 caracteres.';
-      return;
-    }
-    try {
-      await redefinirSenhaPeloAdministrador(id, senha);
-      mensagem.textContent = 'Senha alterada com sucesso.';
-      formSenha.reset();
-    } catch (erro) { mensagem.textContent = erro.message; }
-  });
-
-  atualizarLista().catch((erro) => { mensagem.textContent = erro.message; });
-}
-
-function configurarSaida() {
-  document.getElementById('linkSairCadastro').addEventListener('click', async (evento) => {
-    evento.preventDefault();
-    try { await encerrarSessaoNoServidor(); } catch (_) {  }
-    localStorageEncerrarSessao();
-    window.location.href = 'index.html';
   });
 }

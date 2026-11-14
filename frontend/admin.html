@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Painel administrativo — City Pizzas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Cabeçalho -->
+  <header class="cabecalho">
+    <a href="pedidos.html" class="cabecalho__marca">City Pizzas</a>
+    <nav class="cabecalho__nav">
+      <a href="pedidos.html">Novo pedido</a>
+      <a href="cadastros.html">Cadastros</a>
+      <a href="historico.html">Pedidos anteriores</a>
+      <span class="cabecalho__usuario" id="nomeUsuario"></span>
+      <a href="#" id="linkSair">Sair</a>
+    </nav>
+  </header>
+
+  <main class="cadastro admin" id="painelAdmin" hidden>
+    <h1 class="cadastro__titulo">Painel administrativo</h1>
+    <p class="cadastro__subtitulo">Funções exclusivas do administrador: colaboradores, pedidos e auditoria.</p>
+
+    <!-- Abas -->
+    <div class="cadastro__abas" role="tablist">
+      <button type="button" class="cadastro__aba ativa" data-aba="colaboradores" role="tab">Colaboradores</button>
+      <button type="button" class="cadastro__aba" data-aba="pedidos" role="tab">Pedidos</button>
+      <button type="button" class="cadastro__aba" data-aba="auditoria" role="tab">Auditoria</button>
+    </div>
+
+    <div class="cadastro__cartao">
+
+      <!-- Aba Colaboradores -->
+      <section id="abaColaboradores" class="aba-conteudo" role="tabpanel">
+        <div id="mensagemColaborador" class="mensagem" role="status" aria-live="polite"></div>
+
+        <h2 class="cadastro__subtitulo">Colaboradores cadastrados</h2>
+        <div class="tabela-rolavel">
+          <table class="tabela">
+            <thead><tr><th>Nome</th><th>Matrícula</th><th>E-mail</th><th>Perfil</th><th>Ação</th></tr></thead>
+            <tbody id="listaColaboradores"></tbody>
+          </table>
+        </div>
+
+        <hr />
+        <h2 class="cadastro__subtitulo">Cadastrar colaborador</h2>
+        <form id="formColaborador" autocomplete="off">
+          <div class="campo"><label for="colNome">Nome</label><input id="colNome" required /></div>
+          <div class="campo"><label for="colMatricula">Matrícula interna</label><input id="colMatricula" required /></div>
+          <div class="campo"><label for="colEmail">E-mail</label><input id="colEmail" type="email" required /></div>
+          <div class="campo"><label for="colSenha">Senha inicial (mínimo 8 caracteres)</label><input id="colSenha" type="password" minlength="8" required autocomplete="new-password" /></div>
+          <div class="campo"><label for="colPerfil">Perfil</label><select id="colPerfil"><option value="funcionario">Funcionário</option><option value="administrador">Administrador</option></select></div>
+          <button type="submit" class="botao botao--preto">Cadastrar colaborador</button>
+        </form>
+
+        <hr />
+        <h2 class="cadastro__subtitulo">Redefinir senha de colaborador</h2>
+        <form id="formSenhaAdmin" autocomplete="off">
+          <div class="campo"><label for="colaboradorSenhaId">Colaborador</label><select id="colaboradorSenhaId" required></select></div>
+          <div class="campo"><label for="senhaAdminNova">Nova senha (mínimo 8 caracteres)</label><input id="senhaAdminNova" type="password" minlength="8" autocomplete="new-password" required /></div>
+          <button type="submit" class="botao botao--preto">Redefinir senha</button>
+        </form>
+      </section>
+
+      <!-- Aba Pedidos -->
+      <section id="abaPedidos" class="aba-conteudo" role="tabpanel" style="display:none;">
+        <h2 class="cadastro__subtitulo">Consulta de pedidos</h2>
+        <form id="formFiltroPedidos" class="filtros" autocomplete="off">
+          <div class="campo"><label for="filtroPedidoTermo">Cliente, telefone, ID ou matrícula</label><input id="filtroPedidoTermo" type="search" /></div>
+          <div class="campo"><label for="filtroPedidoSituacao">Situação</label>
+            <select id="filtroPedidoSituacao">
+              <option value="FINALIZADOS">Finalizados</option>
+              <option value="ABERTOS">Em aberto</option>
+              <option value="TODOS">Todos</option>
+            </select>
+          </div>
+          <div class="campo"><label for="filtroPedidoModalidade">Modalidade</label>
+            <select id="filtroPedidoModalidade">
+              <option value="">Todas</option><option value="ENTREGA">Entrega</option><option value="RETIRADA">Retirada</option>
+            </select>
+          </div>
+          <div class="campo"><label for="filtroPedidoPagamento">Pagamento</label>
+            <select id="filtroPedidoPagamento">
+              <option value="">Todos</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CREDITO">Crédito</option><option value="DEBITO">Débito</option>
+            </select>
+          </div>
+          <div class="campo"><label for="filtroPedidoDe">De</label><input id="filtroPedidoDe" type="date" /></div>
+          <div class="campo"><label for="filtroPedidoAte">Até</label><input id="filtroPedidoAte" type="date" /></div>
+          <div class="filtros__acoes">
+            <button type="submit" class="botao botao--preto">Pesquisar</button>
+            <button type="button" class="botao botao--contorno" id="limparFiltroPedidos">Limpar</button>
+          </div>
+        </form>
+        <div id="mensagemPedidos" class="mensagem" role="status" aria-live="polite"></div>
+        <p id="resumoPedidos" class="admin__resumo"></p>
+        <div id="listaPedidosAdmin" class="admin__lista"></div>
+      </section>
+
+      <!-- Aba Auditoria -->
+      <section id="abaAuditoria" class="aba-conteudo" role="tabpanel" style="display:none;">
+        <h2 class="cadastro__subtitulo">Histórico de auditoria</h2>
+        <form id="formFiltroAuditoria" class="filtros" autocomplete="off">
+          <div class="campo"><label for="filtroAuditoriaTermo">Usuário, ação ou registro</label><input id="filtroAuditoriaTermo" type="search" /></div>
+          <div class="campo"><label for="filtroAuditoriaDe">De</label><input id="filtroAuditoriaDe" type="date" /></div>
+          <div class="campo"><label for="filtroAuditoriaAte">Até</label><input id="filtroAuditoriaAte" type="date" /></div>
+          <div class="filtros__acoes">
+            <button type="submit" class="botao botao--preto">Consultar</button>
+            <button type="button" class="botao botao--contorno" id="limparFiltroAuditoria">Limpar</button>
+          </div>
+        </form>
+        <div id="mensagemAuditoria" class="mensagem" role="status" aria-live="polite"></div>
+        <div class="tabela-rolavel">
+          <table class="tabela" id="tabelaAuditoria" hidden>
+            <thead><tr><th>Data e hora</th><th>Usuário</th><th>Ação</th><th>Registro afetado</th></tr></thead>
+            <tbody id="listaAuditoria"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

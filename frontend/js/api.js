@@ -35,7 +35,6 @@ async function requisitar(caminho, opcoes = {}) {
 
 function extrairMensagemDeErro(corpo, status) {
   if (corpo && typeof corpo === 'object') {
-
     const mensagem = corpo.mensagem || corpo.message;
     if (mensagem) return mensagem;
   }
@@ -99,6 +98,19 @@ function cadastrarColaborador(dadosColaborador) {
 
 function listarColaboradores() {
   return requisitar('/colaboradores', { method: 'GET' });
+}
+
+function excluirColaborador(colaboradorId) {
+  return requisitar(`/colaboradores/${encodeURIComponent(colaboradorId)}`, { method: 'DELETE' });
+}
+
+function consultarAuditoria({ termo = '', de = '', ate = '' } = {}) {
+  const parametros = new URLSearchParams();
+  if (termo.trim()) parametros.set('termo', termo.trim());
+  if (de) parametros.set('de', de);
+  if (ate) parametros.set('ate', ate);
+  const consulta = parametros.toString();
+  return requisitar(`/auditoria${consulta ? `?${consulta}` : ''}`, { method: 'GET' });
 }
 
 function redefinirSenhaPeloAdministrador(colaboradorId, novaSenha) {
@@ -193,7 +205,7 @@ function consultarTaxaEntrega() {
 }
 
 function cancelarPedido(pedidoId) {
-  return requisitar(`/pedidos/${pedidoId}`, { method: 'DELETE' });
+  return requisitar(`/pedidos/${encodeURIComponent(pedidoId)}`, { method: 'DELETE' });
 }
 
 /* ---------- Sessão local ---------- */
@@ -216,6 +228,40 @@ function localStorageObterUsuario() {
 function localStorageEncerrarSessao() {
   localStorage.removeItem('cityPizzas_token');
   localStorage.removeItem('cityPizzas_usuario');
+  localStorage.removeItem('cityPizzas_historicoPedidos');
+  sessionStorage.removeItem('cityPizzas_clienteSelecionado');
+}
+
+async function sairDoSistema() {
+  try { await encerrarSessaoNoServidor(); } catch (_) { }
+  localStorageEncerrarSessao();
+  window.location.href = 'index.html';
+}
+
+/* ---------- Permissões na interface ---------- */
+
+function configurarCabecalho() {
+  if (!usuarioEhAdministrador()) {
+    document.querySelectorAll('[data-somente-admin]').forEach((elemento) => elemento.remove());
+  }
+  const nome = document.getElementById('nomeUsuario');
+  if (nome) nome.textContent = `Olá, ${nomeDoUsuarioLogado()}`;
+  const sair = document.getElementById('linkSair');
+  if (sair) {
+    sair.addEventListener('click', (evento) => {
+      evento.preventDefault();
+      sairDoSistema();
+    });
+  }
+}
+
+function dadosMinimosDoCliente(cliente) {
+  return {
+    id: cliente?.id,
+    nome: cliente?.nome,
+    telefone: cliente?.telefone,
+    endereco: cliente?.endereco,
+  };
 }
 
 function usuarioEstaLogado() {
