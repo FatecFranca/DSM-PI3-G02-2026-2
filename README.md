@@ -297,8 +297,8 @@ A configuração principal está em `src/main/resources/application.properties`.
 |---|---|---|
 | `MONGODB_URI` | Conexão com MongoDB | `mongodb://localhost:27017/pizzaria` |
 | `PIZZA_PRECO_BASE` | Pizza assada (inteira ou meio a meio) | `60.00` * |
-| `PIZZA_PRECO_PRE_ASSADA` | Pizza pré-assada | `50.00` * |
-| `TAXA_ENTREGA` | Taxa fixa para entregas | `7.00` * |
+| `PIZZA_PRECO_PRE_ASSADA` | Pizza pré-assada | `46.59` * |
+| `TAXA_ENTREGA` | Taxa fixa para entregas | `10.00` * |
 | `BOOTSTRAP_ADMIN_NOME` | Nome do administrador inicial | Vazio |
 | `BOOTSTRAP_ADMIN_MATRICULA` | Matrícula do administrador inicial | Vazio |
 | `BOOTSTRAP_ADMIN_EMAIL` | E-mail do administrador inicial | Vazio |
@@ -309,7 +309,7 @@ A configuração principal está em `src/main/resources/application.properties`.
 | `SMTP_FROM` | Remetente dos e-mails | `SMTP_USERNAME`, quando definido |
 | `SMTP_AUTH`, `SMTP_STARTTLS`, `SMTP_SSL` | Opções SMTP | `true`, `true`, `false` |
 
-\* **Os preços 60.00, 50.00 e 7.00 são parâmetros de exemplo do pacote de desenvolvimento, não valores comerciais aprovados pela pizzaria.** Confirme-os com o cliente antes do uso real. No código, valores monetários devem utilizar **ponto decimal**, por exemplo `60.00`.
+\* **Os preços 60.00, 46.59 e 10.00 são parâmetros de exemplo do pacote de desenvolvimento, não valores comerciais aprovados pela pizzaria.** Confirme-os com o cliente antes do uso real. No código, valores monetários devem utilizar **ponto decimal**, por exemplo `60.00`.
 
 ### Recuperação de senha por e-mail
 
@@ -607,7 +607,7 @@ Desenvolvido pelo **Grupo 02 — PI do 3º semestre de DSM, FATEC Franca (2026/2
 
 - **João Pedro** — Product Owner e Back-end.
 - **Ronie** — Back-end.
-- **Maria Eduarda (Duda)** — Banco de Dados.
+- **Maria Eduarda** — Banco de Dados.
 - **Cauã** — Front-end.
 
 ---
